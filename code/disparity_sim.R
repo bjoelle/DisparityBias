@@ -6,7 +6,7 @@ set.seed(123)
 
 birth <- 0.1
 death <- 0.05 
-tips <- 50
+tips <- 100
 
 tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
 plot(tr)
@@ -15,7 +15,7 @@ plot(tr)
 # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
 # current assumption: bifurcating speciation = each branch is a species
 
-v = 0.5 # rate of trait evolution
+v = 1 # rate of trait evolution
 traits <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)
 
 # store trait values with species
@@ -28,7 +28,7 @@ traits <- cbind(taxa, traits)
 
 bins <- 10
 
-rate <- 0.4
+rate <- 0.3
 fossils <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
 
 plot(fossils, tr, strata = bins, show.strata = TRUE)
@@ -36,11 +36,11 @@ plot(fossils, tr, strata = bins, show.strata = TRUE)
 # simulate biogeography 
 # note approach assumes migration does not influence tree shape
 
-rate.bio = 0.02 # migration rate
+rate.bio = 0.005 # migration rate
 traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
 
-low = 0.05
-high = 0.95
+low = 0.01
+high = 0.5
 translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 0) low else high)
 
 rates = translate.states(traits.bio, low, high)
