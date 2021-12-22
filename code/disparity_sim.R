@@ -63,14 +63,15 @@ int.ages <- seq(0, max.age, length = bins + 1)
 disparity.df <- function(traits, fossils, interval.ages){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
-  disp <- data.frame(bin = c(), sp = c(), traits = c())  
+  disp <- data.frame(bin = c(), sp = c(), traits = c(), bin.midpoint = c())  
   for(i in 1:(bins - 1)){
     hmin <- interval.ages[i]
+    hmax <- interval.ages[i+1]
     tmp <- subset(fossils, hmin == interval.ages[i])
     tmp <- unique(tmp)
     for(j in tmp$sp){
       t <- traits[which(traits$sp == j),]$traits[1]
-      disp <- rbind(disp, data.frame(bin = i, sp = j, traits = t)) 
+      disp <- rbind(disp, data.frame(bin = i, sp = j, traits = t, bin.midpoint = mean(c(hmin, hmax)))) 
     }
   }
   disp
@@ -88,7 +89,14 @@ plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
 plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
 
 legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
-       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4),rgb(0,.5,.5,1/4)) )
+       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
 
+plot( (((traits$start - traits$end) / 2) + traits$start), traits$traits, col = rgb(0,0,1,1/4), pch = 19)
+points(disp$bin.midpoint, disp$traits, col = rgb(1,0,0,1/4), pch = 19)
+points(disp.bio$bin.midpoint, disp.bio$traits, col = rgb(0,.5,.5,1/4), pch = 19)
 
 #Catherine does her whole disparity thing :)
+
+
+
+
