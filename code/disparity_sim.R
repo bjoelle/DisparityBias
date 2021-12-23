@@ -96,6 +96,7 @@ points(disp$bin.midpoint, disp$traits, col = rgb(1,0,0,1/4), pch = 19)
 points(disp.bio$bin.midpoint, disp.bio$traits, col = rgb(0,.5,.5,1/4), pch = 19)
 
 #Catherine does her whole disparity thing :)
+# Catherine *tries* to do the disparity thing
 
 
 
