@@ -1,6 +1,6 @@
 
 
-set.seed(123)
+set.seed(125)
 
 # simulate tree
 
@@ -109,6 +109,13 @@ concat_matrix <- rbind(true, uni, bias)
 
 concat_matrix
 
+# keys - simulated vectors may have variable lengths
+true.mx <- length(traits$traits)
+uni.mn <- true.mx + 1
+uni.mx <- true.mx + length(disp$traits)
+bias.mn <- uni.mx + 1
+bias.mx <- uni.mx + length(disp.bio$traits)
+
 #ordinating the matrices with traits
 ordin.all <- prcomp(concat_matrix)
 ordinated_all <- ordin.all$x
@@ -119,13 +126,14 @@ ordinated_all <- ordin.all$x
 #biasO <- ordinated_all[387:409]
 
 #groups <- list("trueO" = c(1:369), "uni" = c(370:386), "bias" = c(387:409))
-rownames(ordinated_all) <- c(1:409)
+#rownames(ordinated_all) <- c(1:409)
+rownames(ordinated_all) <- c(1:bias.mx)
 
 #ordin2 <- cbind(ordinated_all, replicate(2,ordinated_all[,1]))
 
-disparity_data <- dispRity.per.group(ordinated_all,
-                                     list(trueO = c(1:369), uni = c(370:386), bias = c(387:409)),
-metric = c(median, centroids))
+disparity_data <- dispRity::dispRity.per.group(ordinated_all,
+                                     list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
+metric = c(median)) #centroids
 
 disparity_data
 
