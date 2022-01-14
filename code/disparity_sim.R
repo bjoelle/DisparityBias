@@ -44,7 +44,7 @@ plot(fossils, tr, strata = bins, show.strata = TRUE)
 # simulate biogeography 
 # note approach assumes migration does not influence tree shape
 
-rate.bio = 0.0075 # migration rate ### increased slightly from 0.005, few taxa from area 2 otherwise
+rate.bio = 0.003 # migration rate ### increased slightly from 0.005, few taxa from area 2 otherwise
 traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
 
 low = 0.015
@@ -71,14 +71,12 @@ int.ages <- seq(0, max.age, length = bins + 1)
 disparity.df <- function(traits, fossils, interval.ages){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
-  #disp <- data.frame(bin = c(), sp = c(), traits = c(), bin.midpoint = c())
-  disp <- data.frame(bin = c(), sp = c(), bin.midpoint = c())  
+  disp <- data.frame()
   for(i in 1:(bins - 1)){
     hmin <- interval.ages[i]
     hmax <- interval.ages[i+1]
     tmp <- subset(fossils, hmin == interval.ages[i])
     tmp <- unique(tmp)
-    disp <- data.frame()
     for(j in tmp$sp){
       tmp2 <- data.frame(bin = i, sp = j, bin.midpoint = mean(c(hmin, hmax)))
       for(k in 1:trait_num){
@@ -123,7 +121,7 @@ for(i in 1:trait_num){
   true <- as.matrix(traits[,t])
   uni <- as.matrix(disp[,t])
   bias <- as.matrix(disp.bio[,t])
-  concat_matrix[,i] <- rbind(true, uni, bias)#cbind(concat_matrix, tmp)
+  concat_matrix[,i] <- rbind(true, uni, bias)
 }
 
 concat_matrix
@@ -149,14 +147,14 @@ ordinated_all <- ordin.all$x
 rownames(ordinated_all) <- c(1:bias.mx)
 
 #ordin2 <- cbind(ordinated_all, replicate(2,ordinated_all[,1]))
-
+library(dispRity)
 disparity_data <- dispRity::dispRity.per.group(ordinated_all,
                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
 metric = c(median,centroids)) #centroids
 
 disparity_data
 
-
+plot(disparity_data)
 
 
 ############# stuff below is from when I ran dispRity previously with my extant datasets
