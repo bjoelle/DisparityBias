@@ -133,7 +133,7 @@ rownames(ordinated_all) <- c(1:bias.mx)
 
 disparity_data <- dispRity::dispRity.per.group(ordinated_all,
                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-metric = c(median)) #centroids
+metric = c(median,centroids)) #centroids
 
 disparity_data
 
