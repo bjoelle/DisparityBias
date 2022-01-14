@@ -15,12 +15,20 @@ plot(tr)
 # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
 # current assumption: bifurcating speciation = each branch is a species
 
-v = 1 # rate of trait evolution
-traits <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v) #removed min.value = 0
-
 # store trait values with species
 taxa <- FossilSim::sim.taxonomy(tr, beta = 1)
-traits <- cbind(taxa, traits)
+traits <- taxa
+
+trait_num <- 2
+v <- 1 # rate of trait evolution
+
+for(i in 1:trait_num){
+  tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0) #removed min.value = 0
+  traits <- cbind(traits, tmp)
+  colnames(traits)[ncol(traits)] <- paste0("trait",i)
+}
+
+
 
 ## TO DO: add stasis?
 
@@ -63,15 +71,22 @@ int.ages <- seq(0, max.age, length = bins + 1)
 disparity.df <- function(traits, fossils, interval.ages){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
-  disp <- data.frame(bin = c(), sp = c(), traits = c(), bin.midpoint = c())  
+  #disp <- data.frame(bin = c(), sp = c(), traits = c(), bin.midpoint = c())
+  disp <- data.frame(bin = c(), sp = c(), bin.midpoint = c())  
   for(i in 1:(bins - 1)){
     hmin <- interval.ages[i]
     hmax <- interval.ages[i+1]
     tmp <- subset(fossils, hmin == interval.ages[i])
     tmp <- unique(tmp)
+    disp <- data.frame()
     for(j in tmp$sp){
-      t <- traits[which(traits$sp == j),]$traits[1]
-      disp <- rbind(disp, data.frame(bin = i, sp = j, traits = t, bin.midpoint = mean(c(hmin, hmax)))) 
+      tmp2 <- data.frame(bin = i, sp = j, bin.midpoint = mean(c(hmin, hmax)))
+      for(k in 1:trait_num){
+        t <- traits[which(traits$sp == j),][paste0("trait",k)][[1]]
+        tmp2 <- cbind(tmp2, data.frame(tc = t))
+        colnames(tmp2)[ncol(tmp2)] <-  paste0("trait",k)
+      }
+      disp <- rbind(disp, tmp2) 
     }
   }
   disp
@@ -80,9 +95,9 @@ disparity.df <- function(traits, fossils, interval.ages){
 disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
 disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
 
-h1 <- hist(traits$traits)
-h2 <- hist(disp$traits, breaks = h1$breaks)
-h3 <- hist(disp.bio$traits, breaks = h1$breaks)
+h1 <- hist(traits$trait1)
+h2 <- hist(disp$trait1, breaks = h1$breaks)
+h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
 
 plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
 plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
@@ -91,9 +106,9 @@ plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
 legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
        fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
 
-plot( (((traits$start - traits$end) / 2) + traits$start), traits$traits, col = rgb(0,0,1,1/4), pch = 19)
-points(disp$bin.midpoint, disp$traits, col = rgb(1,0,0,1/4), pch = 19)
-points(disp.bio$bin.midpoint, disp.bio$traits, col = rgb(0,.5,.5,1/4), pch = 19)
+plot( (((traits$start - traits$end) / 2) + traits$start), traits$trait1, col = rgb(0,0,1,1/4), pch = 19)
+points(disp$bin.midpoint, disp$trait1, col = rgb(1,0,0,1/4), pch = 19)
+points(disp.bio$bin.midpoint, disp.bio$trait1, col = rgb(0,.5,.5,1/4), pch = 19)
 
 #Catherine does her whole disparity thing :)
 # Catherine *tries* to do the disparity thing
@@ -102,19 +117,23 @@ points(disp.bio$bin.midpoint, disp.bio$traits, col = rgb(0,.5,.5,1/4), pch = 19)
 ## disp$traits for uniform sampling, disp.bio$traits for biased sampling
 
 # concatenate matrices
-true <- as.matrix(traits$traits)
-uni <- as.matrix(disp$traits)
-bias <- as.matrix(disp.bio$traits)
-concat_matrix <- rbind(true, uni, bias)
+concat_matrix <- matrix(nrow = (nrow(traits)+nrow(disp)+nrow(disp.bio)), ncol = trait_num)
+for(i in 1:trait_num){
+  t <- paste0("trait",i)
+  true <- as.matrix(traits[,t])
+  uni <- as.matrix(disp[,t])
+  bias <- as.matrix(disp.bio[,t])
+  concat_matrix[,i] <- rbind(true, uni, bias)#cbind(concat_matrix, tmp)
+}
 
 concat_matrix
 
 # keys - simulated vectors may have variable lengths
-true.mx <- length(traits$traits)
+true.mx <- length(traits$trait1)
 uni.mn <- true.mx + 1
-uni.mx <- true.mx + length(disp$traits)
+uni.mx <- true.mx + length(disp$trait1)
 bias.mn <- uni.mx + 1
-bias.mx <- uni.mx + length(disp.bio$traits)
+bias.mx <- uni.mx + length(disp.bio$trait1)
 
 #ordinating the matrices with traits
 ordin.all <- prcomp(concat_matrix)
