@@ -16,18 +16,18 @@ plot(tr)
 # current assumption: bifurcating speciation = each branch is a species
 
 # store trait values with species
-taxa <- FossilSim::sim.taxonomy(tr, beta = 1)
+taxa <- FossilSim::sim.taxonomy(tr, beta = 1) #how you define morphotaxa with respect to the tree
 traits <- taxa
 
-trait_num <- 2
-v <- 1 # rate of trait evolution
+trait_num <- 2 #number of traits we are simulating
+v <- 1 # rate of trait evolution, need to discuss what value to use
 
 for(i in 1:trait_num){
-  tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0) #removed min.value = 0
+  tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)
   traits <- cbind(traits, tmp)
   colnames(traits)[ncol(traits)] <- paste0("trait",i)
 }
-
+## links simulated traits to taxa
 
 
 ## TO DO: add stasis?
@@ -36,20 +36,20 @@ for(i in 1:trait_num){
 
 bins <- 3
 
-rate <- 0.2 ### decreased slightly from 0.3 to reduce number of fossils overall
+rate <- 0.2 ### decreased slightly from 0.3 to reduce number of fossils overall, rate of fossilisation
 fossils <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
 
 plot(fossils, tr, strata = bins, show.strata = TRUE)
 
-# simulate biogeography 
+###### simulate biogeography 
 # note approach assumes migration does not influence tree shape
 
 rate.bio = 0.003 # migration rate ### increased slightly from 0.005, few taxa from area 2 otherwise
 traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
 
-low = 0.015
-high = 0.3 #### decreased from 0.5, rate of preservation was super high
-translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 0) low else high)
+low = 0.0015 ###was 0.0015, low sampling value area
+high = 0.5 #### decreased from 0.5, rate of preservation was super high
+translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
 ############# are we both making migration into area 2 unlikely, and under-sampling area 2?
 rates = translate.states(traits.bio, low, high)
 fossils.bio = FossilSim::sim.fossils.poisson(rates, tree = tr)
@@ -66,7 +66,7 @@ fossils.bio.binned <- FossilSim::sim.interval.ages(fossils.bio, tr, max.age = ma
 # define interval ages
 int.ages <- seq(0, max.age, length = bins + 1)
 
-# create a new data.frame for disparity analyses based on sampled species in each bin
+# create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
 
 disparity.df <- function(traits, fossils, interval.ages){
   if(identical(fossils$hmin, fossils$hmax))
@@ -124,25 +124,20 @@ for(i in 1:trait_num){
   concat_matrix[,i] <- rbind(true, uni, bias)
 }
 
-concat_matrix
+head(concat_matrix)
 
-# keys - simulated vectors may have variable lengths
+# keys - simulated vectors may have variable lengths 
 true.mx <- length(traits$trait1)
 uni.mn <- true.mx + 1
 uni.mx <- true.mx + length(disp$trait1)
 bias.mn <- uni.mx + 1
 bias.mx <- uni.mx + length(disp.bio$trait1)
 
-#ordinating the matrices with traits
+#ordinating the matrices with traits ### may not need to as traits are independent
 ordin.all <- prcomp(concat_matrix)
 ordinated_all <- ordin.all$x
 
-# separating ordinated matrix ###not necessary
-#trueO <- ordinated_all[1:369]
-#uniO <- ordinated_all[370:386]
-#biasO <- ordinated_all[387:409]
 
-#groups <- list("trueO" = c(1:369), "uni" = c(370:386), "bias" = c(387:409))
 #rownames(ordinated_all) <- c(1:409)
 rownames(ordinated_all) <- c(1:bias.mx)
 
@@ -157,22 +152,5 @@ disparity_data
 plot(disparity_data)
 
 
-############# stuff below is from when I ran dispRity previously with my extant datasets
-timebin <- list("Ypresian" = c(1:369), "Lutetian" = c(370:386), "Bartonian" = c(387:408))
 
-PCdataCust <- custom.subsets(as.matrix(ordinated_all), group = timebin)
-###### Warning: In custom.subsets(PCdata1, group = timebin) :Rownames generated for PCdata1 as seq(1:148)
-
-
-##### Bootstrap
-PCdataBoots <- boot.matrix(PCdataCust, bootstraps = 100, boot.type = "full", rarefaction = TRUE)
-# which level do I want to rarefy to?
-# how many times to bootstrap?
-
-
-#### Sum of variances
-SumV <- dispRity(PCdataBoots, metric = c(sum, variances))
-summary(SumV)
-
-plot(SumV,type = "box")
 
