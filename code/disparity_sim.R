@@ -49,8 +49,26 @@ plot(fossils, tr, strata = bins, show.strata = TRUE)
 # assumption: approach assumes migration does not influence tree shape
 
 rate.bio = 0.04 # migration rate 
-traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
+#traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
 
+# Making sure the number of taxa in each area is nearly equal
+
+## Setting up the parameter of choice
+fossils_in_area1 <- 0
+
+## Lowest fraction of taxa in area 1 permitted
+threshold <- 0.45
+number_of_tips <- length(tmp)
+L <- round(sum(threshold*number_of_tips))
+H <- sum(number_of_tips-L)
+
+## Run the while loop to get a set of around 100 fossils (+/1 20)
+while(fossils_in_area1 < L || fossils_in_area1 > H) {
+  ## Running the biogeography simulation
+  traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
+  ## Updating the number of fossils
+  fossils_in_area1 <- sum(traits.bio == '1')
+}
 
 ### Step 5: Simulate biased sampling
 low = 0.0015 # low sampling area
@@ -101,16 +119,16 @@ disparity.df <- function(traits, fossils, interval.ages){
 disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
 disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
 
-#h1 <- hist(traits$trait1)
-#h2 <- hist(disp$trait1, breaks = h1$breaks)
-#h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
+h1 <- hist(traits$trait1)
+h2 <- hist(disp$trait1, breaks = h1$breaks)
+h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
 
-#plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
-#plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
-#plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
+plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
+plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
+plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
 
-#legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
-#       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
+legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
+       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
 
 plot( (((traits$start - traits$end) / 2) + traits$start), traits$trait1, col = rgb(0,0,1,1/4), pch = 19)
 points(disp$bin.midpoint, disp$trait1, col = rgb(1,0,0,1/4), pch = 19)
@@ -146,12 +164,12 @@ rownames(ordinated_all) <- c(1:bias.mx)
 library(dispRity)
 disparity_data <- dispRity::dispRity.per.group(ordinated_all,
                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-metric = c(median,centroids)) #centroids
-
+  metric = centroids) #variance
+# metric = variances)
 disparity_data
 
 plot(disparity_data)
 
 
-
+####c(mean,variance))
 
