@@ -160,16 +160,22 @@ ordin.all <- prcomp(concat_matrix)
 ordinated_all <- ordin.all$x
 rownames(ordinated_all) <- c(1:bias.mx)
 
-# compute metric
+# compute metric - centroids
 library(dispRity)
-disparity_data <- dispRity::dispRity.per.group(ordinated_all,
+disparity_centr <- dispRity::dispRity.per.group(ordinated_all,
                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
   metric = centroids) #variance
 # metric = variances)
-disparity_data
+disparity_centr
 
-plot(disparity_data)
+plot(disparity_centr)
 
-
+#compute metric - sum of variances
 ####c(mean,variance))
+disparity_var <- dispRity::dispRity.per.group(ordinated_all,
+                                               list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
+                                               metric = variances) #variance
+# metric = variances)
+disparity_var
 
+plot(disparity_var)
