@@ -155,8 +155,8 @@ uni.mx <- true.mx + length(disp$trait1)
 bias.mn <- uni.mx + 1
 bias.mx <- uni.mx + length(disp.bio$trait1)
 
-# ordinating the matrices with traits ### may not need to as traits are independent
-ordin.all <- prcomp(concat_matrix)
+# ordinating the matrices with traits ### may not need to as traits are independent #TG: probably not needed indeed
+ordin.all <- prcomp(concat_matrix) #TG: Note also that here some species are duplicated (the traitspace contains 413 species/samples but this trait space has 443 - the bias/uni sampled ones). This creates a bias in the PCA.
 ordinated_all <- ordin.all$x
 rownames(ordinated_all) <- c(1:bias.mx)
 
@@ -179,3 +179,60 @@ disparity_var <- dispRity::dispRity.per.group(ordinated_all,
 disparity_var
 
 plot(disparity_var)
+
+## Example script using a different dispRity pipeline
+
+## Rename some variables
+my_geography <- traits.bio
+my_trait_space <- traits[, c("trait1", "trait2")]
+
+## Creating the group vector for dispRity
+my_groups <- list(## All the species
+                  "all_species" = 1:nrow(my_trait_space),
+                  ## All species in location 1
+                  "area_0" = which(my_geography == 0),
+                  ## All species in location 2
+                  "area_1" = which(my_geography == 1),
+                  ## The uniform sampled group
+                  "uni_sample" = disp$sp, #TG: assuming that that $sp column contains the species ID/row number in traits[, c("trait1", "trait2")]
+                  ## The biased sampled group
+                  "bias_sample" = disp.bio$sp)
+
+## Creating a dispRity object that contains the trait space and the groups
+my_groupings <- custom.subsets(data = my_trait_space,
+                               group = my_groups)
+#TG: ignore the warning (or read it to know what it just did ;) - but nothing bad happening here)
+
+## Calculating disparity on these groups
+disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
+
+## Hop
+plot(disparity_sum_var)
+#TG: not that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
+#TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
+get.disparity(disparity_sum_var)
+
+
+
+## Write pseudo function for the simulation pipeline
+simulation.pipeline <- function(birth, death, tips, <other_magic_numbers>) {
+  ## Simulating the data
+  <the pipeline that simulates the species, the traits and the sampling bias>
+  ## Preparing the data
+  <the code to create the trait space to be fed to dispRity, like the code from above with my_groups and custom.subsets>
+  ## The output
+  return(<the bit to be returned, again, I suggest outputing the my_groupings variable from the example above>)
+}
+
+#TG: You can then use the function replicate to get some replicates. For example:
+my_5_simulations <- repliate(5, simulation.pipeline(birth = X, death = Y, tips = Z, <other_magic_numbers>))
+
+#TG: You can then measure the disparity on the output using lapply (applying a function to a list)
+my_sum_variances <- lapply(my_5_simulations, dispRity, metric = c(sum, variances))
+
+#TG: You can then extract the disparity values (the point estimates explained above)
+my_point_estimates <- lapply(my_sum_variances, get.disparity)
+
+##TG: And you can combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
+my_results_table <- do.call(rbind, my_point_estimates)
+boxplot(my_results_table)
