@@ -2,12 +2,23 @@
 
 set.seed(125)
 
+
+### Setting up variables
+birth <- 0.1 #birth rate
+death <- 0.05 # death rate
+tips <- 100 # number of tips in tree
+trait_num <- 2 # number of traits we are simulating
+v <- 1 # rate of trait evolution
+rate <- 0.2 # rate of fossilisation
+bins <- 3 # number of time bins
+rate.bio = 0.02 # migration rate 
+fossils_in_area1 <- 0 # setting up parameter for checking spatial split
+threshold <- 0.45 # threshold for spatial split between areas 0 and 1
+low = 0.0015 # sampling rate for fossils in low sampling area
+high = 0.5 # sampling rate for fossils in high sampling area
+
+
 ### Step 1: Simulate tree 
-
-birth <- 0.1
-death <- 0.05 
-tips <- 100
-
 tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
 plot(tr)
 
@@ -19,9 +30,6 @@ plot(tr)
 # store trait values with species
 taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
 traits <- taxa
-
-trait_num <- 2 # number of traits we are simulating
-v <- 1 # rate of trait evolution
 
 # loop to similate trait_num number of traits
 for(i in 1:trait_num){
@@ -36,11 +44,7 @@ for(i in 1:trait_num){
 
 ### Step 3: Simulate constant rate of preservation
 
-rate <- 0.2 # rate of fossilisation
-
 fossils <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
-
-bins <- 3 # number of time bins
 
 plot(fossils, tr, strata = bins, show.strata = TRUE)
 
@@ -48,16 +52,13 @@ plot(fossils, tr, strata = bins, show.strata = TRUE)
 ### Step 4: Simulate biogeography on tree
 # assumption: approach assumes migration does not influence tree shape
 
-rate.bio = 0.04 # migration rate 
 #traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
 
 # Making sure the number of taxa in each area is nearly equal
 
 ## Setting up the parameter of choice
-fossils_in_area1 <- 0
 
 ## Lowest fraction of taxa in area 1 permitted
-threshold <- 0.45
 number_of_tips <- length(tmp)
 L <- round(sum(threshold*number_of_tips))
 H <- sum(number_of_tips-L)
@@ -71,8 +72,6 @@ while(fossils_in_area1 < L || fossils_in_area1 > H) {
 }
 
 ### Step 5: Simulate biased sampling
-low = 0.0015 # low sampling area
-high = 0.5 # high sampling area
 # associate high and low sampling with biogeographical areas
 translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
 rates = translate.states(traits.bio, low, high)
@@ -180,6 +179,16 @@ disparity_var
 
 plot(disparity_var)
 
+plot(disparity_centr, type = "preview")
+
+
+
+
+
+
+
+
+
 ## Example script using a different dispRity pipeline
 
 ## Rename some variables
@@ -208,7 +217,7 @@ disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
 
 ## Hop
 plot(disparity_sum_var)
-#TG: not that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
+#TG: note that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
 #TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
 get.disparity(disparity_sum_var)
 
