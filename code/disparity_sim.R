@@ -118,9 +118,9 @@ disparity.df <- function(traits, fossils, interval.ages){
 disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
 disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
 
-h1 <- hist(traits$trait1)
-h2 <- hist(disp$trait1, breaks = h1$breaks)
-h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
+#h1 <- hist(traits$trait1)
+#h2 <- hist(disp$trait1, breaks = h1$breaks)
+#h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
 
 plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
 plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
@@ -136,28 +136,28 @@ points(disp.bio$bin.midpoint, disp.bio$trait1, col = rgb(0,.5,.5,1/4), pch = 19)
 
 ### Step 7: Compute disparity metrics
 # concatenate matrices
-concat_matrix <- matrix(nrow = (nrow(traits)+nrow(disp)+nrow(disp.bio)), ncol = trait_num)
-for(i in 1:trait_num){
-  t <- paste0("trait",i)
-  true <- as.matrix(traits[,t])
-  uni <- as.matrix(disp[,t])
-  bias <- as.matrix(disp.bio[,t])
-  concat_matrix[,i] <- rbind(true, uni, bias)
-}
+#concat_matrix <- matrix(nrow = (nrow(traits)+nrow(disp)+nrow(disp.bio)), ncol = trait_num)
+#for(i in 1:trait_num){
+#  t <- paste0("trait",i)
+#  true <- as.matrix(traits[,t])
+#  uni <- as.matrix(disp[,t])
+#  bias <- as.matrix(disp.bio[,t])
+#  concat_matrix[,i] <- rbind(true, uni, bias)
+#}
 
-head(concat_matrix)
+#head(concat_matrix)
 
 # keys - simulated vectors may have variable lengths 
-true.mx <- length(traits$trait1)
-uni.mn <- true.mx + 1
-uni.mx <- true.mx + length(disp$trait1)
-bias.mn <- uni.mx + 1
-bias.mx <- uni.mx + length(disp.bio$trait1)
+#true.mx <- length(traits$trait1)
+#uni.mn <- true.mx + 1
+#uni.mx <- true.mx + length(disp$trait1)
+#bias.mn <- uni.mx + 1
+#bias.mx <- uni.mx + length(disp.bio$trait1)
 
 # ordinating the matrices with traits ### may not need to as traits are independent #TG: probably not needed indeed
-ordin.all <- prcomp(concat_matrix) #TG: Note also that here some species are duplicated (the traitspace contains 413 species/samples but this trait space has 443 - the bias/uni sampled ones). This creates a bias in the PCA.
-ordinated_all <- ordin.all$x
-rownames(ordinated_all) <- c(1:bias.mx)
+#ordin.all <- prcomp(concat_matrix) #TG: Note also that here some species are duplicated (the traitspace contains 413 species/samples but this trait space has 443 - the bias/uni sampled ones). This creates a bias in the PCA.
+#ordinated_all <- ordin.all$x
+#rownames(ordinated_all) <- c(1:bias.mx)
 
 # compute metric - centroids
 library(dispRity)
@@ -203,9 +203,9 @@ my_groups <- list(## All the species
                   ## All species in location 2
                   "area_1" = which(my_geography == 1),
                   ## The uniform sampled group
-                  "uni_sample" = disp$sp, #TG: assuming that that $sp column contains the species ID/row number in traits[, c("trait1", "trait2")]
+                  "uni_sample" = subset(disp$sp, disp$bin == "2"), #TG: assuming that that $sp column contains the species ID/row number in traits[, c("trait1", "trait2")]
                   ## The biased sampled group
-                  "bias_sample" = disp.bio$sp)
+                  "bias_sample" = subset(disp.bio$sp, disp.bio$bin == "2"))
 
 ## Creating a dispRity object that contains the trait space and the groups
 my_groupings <- custom.subsets(data = my_trait_space,
