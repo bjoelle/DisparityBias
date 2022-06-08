@@ -30,6 +30,11 @@ plot(tr)
 # store trait values with species
 taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
 traits <- taxa
+#new_list <- taxa[,c(1:2,4:5)]
+#colnames(new_list)
+#names(new_list)[names(new_list) == "end"] <- "hmin"
+#names(new_list)[names(new_list) == "start"] <- "hmax"
+#typeof(new_list)
 
 # loop to simulate trait_num number of traits
 for(i in 1:trait_num){
@@ -37,7 +42,7 @@ for(i in 1:trait_num){
   traits <- cbind(traits, tmp)
   colnames(traits)[ncol(traits)] <- paste0("trait",i)
 }
-check <- FossilSim::as.fossils(taxa, from.taxonomy = FALSE)
+#check <- FossilSim::as.fossils(taxa, from.taxonomy = FALSE)
 
 ## TO DO: add stasis?
 
@@ -93,7 +98,7 @@ fossils.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = m
 # bin fossils for biased sampling set
 fossils.bio.binned <- FossilSim::sim.interval.ages(fossils.bio.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
 
-int.assign <- function(fossils, ints){
+int.assign <- function(fossils, ints){### function to turn sim.interval.ages into defined/numbered time bins
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
   fossils$int <- NA
@@ -103,7 +108,7 @@ int.assign <- function(fossils, ints){
   fossils
 }
 
-test = int.assign(fossils.bio.binned, int.ages)
+test = int.assign(fossils.bio.binned, int.ages) ##
 
 # create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
 #disparity.df <- function(traits, fossils, interval.ages){
