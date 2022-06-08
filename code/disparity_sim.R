@@ -8,7 +8,7 @@ birth <- 0.1 #birth rate
 death <- 0.05 # death rate
 tips <- 100 # number of tips in tree
 trait_num <- 2 # number of traits we are simulating
-v <- 1 # rate of trait evolution
+v <- 0.5 # rate of trait evolution
 rate <- 0.2 # rate of fossilisation
 bins <- 3 # number of time bins
 rate.bio = 0.02 # migration rate 
@@ -31,23 +31,23 @@ plot(tr)
 taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
 traits <- taxa
 
-# loop to similate trait_num number of traits
+# loop to simulate trait_num number of traits
 for(i in 1:trait_num){
   tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)
   traits <- cbind(traits, tmp)
   colnames(traits)[ncol(traits)] <- paste0("trait",i)
 }
-
+check <- FossilSim::as.fossils(taxa, from.taxonomy = FALSE)
 
 ## TO DO: add stasis?
 
 
 ### Step 3: Simulate constant rate of preservation
 
-fossils <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
-
-plot(fossils, tr, strata = bins, show.strata = TRUE)
-
+fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
+plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
+fossils.uni <- dplyr::distinct(fossils.uni.dupl, sp, .keep_all = TRUE)
+plot(fossils.uni, tr, strata = bins, show.strata = TRUE)
 
 ### Step 4: Simulate biogeography on tree
 # assumption: approach assumes migration does not influence tree shape
@@ -76,9 +76,10 @@ while(fossils_in_area1 < L || fossils_in_area1 > H) {
 translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
 rates = translate.states(traits.bio, low, high)
 # simulate biased sampling
-fossils.bio = FossilSim::sim.fossils.poisson(rates, tree = tr)
-plot(fossils.bio, tr, strata = bins, show.strata = TRUE)
-
+fossils.bio.dupl = FossilSim::sim.fossils.poisson(rates, tree = tr)
+plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE)
+#fossils.bio <- dplyr::distinct(fossils.bio.dupl, sp, .keep_all = TRUE) #removing duplicates
+#plot(fossils.bio, tr, strata = bins, show.strata = TRUE)
 
 ### Step 6: Bin fossils and match traits with species & bins
 max.age = FossilSim::tree.max(tr)
@@ -88,39 +89,51 @@ int.ages <- seq(0, max.age, length = bins + 1)
 # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
 
 # bin fossils for unbiased sampling set
-fossils.binned <- FossilSim::sim.interval.ages(fossils, tr, max.age = max.age, strata = bins, use.species.ages = TRUE)
+fossils.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
 # bin fossils for biased sampling set
-fossils.bio.binned <- FossilSim::sim.interval.ages(fossils.bio, tr, max.age = max.age, strata = bins, use.species.ages = TRUE)
+fossils.bio.binned <- FossilSim::sim.interval.ages(fossils.bio.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
 
-# create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
-disparity.df <- function(traits, fossils, interval.ages){
+int.assign <- function(fossils, ints){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
-  disp <- data.frame()
-  for(i in 1:(bins - 1)){
-    hmin <- interval.ages[i]
-    hmax <- interval.ages[i+1]
-    tmp <- subset(fossils, hmin == interval.ages[i])
-    tmp <- unique(tmp)
-    for(j in tmp$sp){
-      tmp2 <- data.frame(bin = i, sp = j, bin.midpoint = mean(c(hmin, hmax)))
-      for(k in 1:trait_num){
-        t <- traits[which(traits$sp == j),][paste0("trait",k)][[1]]
-        tmp2 <- cbind(tmp2, data.frame(tc = t))
-        colnames(tmp2)[ncol(tmp2)] <-  paste0("trait",k)
-      }
-      disp <- rbind(disp, tmp2) 
-    }
+  fossils$int <- NA
+  for(i in 1:(length(ints) - 1)){
+    fossils[which(fossils$hmin == ints[i]),]$int = i
   }
-  disp
+  fossils
 }
+
+test = int.assign(fossils.bio.binned, int.ages)
+
+# create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
+#disparity.df <- function(traits, fossils, interval.ages){
+#  if(identical(fossils$hmin, fossils$hmax))
+#    stop("fossils must be binned!")
+#  disp <- data.frame()
+#  for(i in 1:(bins - 1)){
+#    hmin <- interval.ages[i]
+#    hmax <- interval.ages[i+1]
+#    tmp <- subset(fossils, hmin == interval.ages[i])
+#    tmp <- unique(tmp)
+#    for(j in tmp$sp){
+#      tmp2 <- data.frame(bin = i, sp = j, bin.midpoint = mean(c(hmin, hmax)))
+#      for(k in 1:trait_num){
+#        t <- traits[which(traits$sp == j),][paste0("trait",k)][[1]]
+#        tmp2 <- cbind(tmp2, data.frame(tc = t))
+#        colnames(tmp2)[ncol(tmp2)] <-  paste0("trait",k)
+#      }
+#      disp <- rbind(disp, tmp2) 
+#    }
+#  }
+#  disp
+#}
 
 disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
 disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
 
-#h1 <- hist(traits$trait1)
-#h2 <- hist(disp$trait1, breaks = h1$breaks)
-#h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
+h1 <- hist(traits$trait1)
+h2 <- hist(disp$trait1, breaks = h1$breaks)
+h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
 
 plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
 plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
@@ -193,6 +206,7 @@ plot(disparity_centr, type = "preview")
 
 ## Rename some variables
 my_geography <- traits.bio
+#my_geography <- data.frame(traits.bio, taxa$sp) ## change to adding bins not taxa numbers
 my_trait_space <- traits[, c("trait1", "trait2")]
 
 ## Creating the group vector for dispRity
@@ -201,7 +215,7 @@ my_groups <- list(## All the species
                   ## All species in location 1
                   "area_0" = which(my_geography == 0),
                   ## All species in location 2
-                  "area_1" = which(my_geography == 1),
+                  #"area_1" = which((my_geography$traits.bio == 1) & (my_geography$taxa.sp == 2)), #change column name
                   ## The uniform sampled group
                   "uni_sample" = subset(disp$sp, disp$bin == "2"), #TG: assuming that that $sp column contains the species ID/row number in traits[, c("trait1", "trait2")]
                   ## The biased sampled group
