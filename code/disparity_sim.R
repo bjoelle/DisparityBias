@@ -69,12 +69,20 @@ L <- round(sum(threshold*number_of_tips))
 H <- sum(number_of_tips-L)
 
 ## Run the while loop to get a set of around 100 fossils (+/1 20)
+iteration.limit <- 100
+iteration.count <- 0
 while(fossils_in_area1 < L || fossils_in_area1 > H) {
+  if (iteration.count >= iteration.limit) {
+    stop("Failed to converge on a suitable geographical distribution")
+  }
   ## Running the biogeography simulation
   traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
   ## Updating the number of fossils
   fossils_in_area1 <- sum(traits.bio == '1')
+  iteration.count <- iteration.count + 1
 }
+
+
 
 ### Step 5: Simulate biased sampling
 # associate high and low sampling with biogeographical areas
@@ -92,6 +100,12 @@ max.age = FossilSim::tree.max(tr)
 int.ages <- seq(0, max.age, length = bins + 1)
 
 # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
+
+###### run Joelle's function
+boop <- bin.taxa(taxa, 3, max.age)
+all.binned <- FossilSim::sim.interval.ages(boop, max.age = max.age, strata = bins, use.species.ages = FALSE)
+
+
 
 # bin fossils for unbiased sampling set
 fossils.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
