@@ -1,6 +1,8 @@
 
 
-set.seed(125)
+source("./bin_taxa.R")
+
+set.seed(133)
 
 
 ### Setting up variables
@@ -16,90 +18,85 @@ fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 low = 0.0015 # sampling rate for fossils in low sampling area
 high = 0.5 # sampling rate for fossils in high sampling area
-
+iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
+iteration.count <- 0 #always set at 0 to start with, aka resetting it
 
 ### Step 1: Simulate tree 
 tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
 plot(tr)
 
+taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
 
-### Step 2: Simulate "true" disparity
 # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
 # current assumption: bifurcating speciation = each branch is a species
 
-# store trait values with species
-taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
+### Step 2: Simulate "true" disparity
+# generate new file for storing traits with taxa in it already [input]
+# simulate trait_num number of traits and append to traits file [output]
 traits <- taxa
-#new_list <- taxa[,c(1:2,4:5)]
-#colnames(new_list)
-#names(new_list)[names(new_list) == "end"] <- "hmin"
-#names(new_list)[names(new_list) == "start"] <- "hmax"
-#typeof(new_list)
-
-# loop to simulate trait_num number of traits
 for(i in 1:trait_num){
   tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)
   traits <- cbind(traits, tmp)
   colnames(traits)[ncol(traits)] <- paste0("trait",i)
 }
-#check <- FossilSim::as.fossils(taxa, from.taxonomy = FALSE)
-
-## TO DO: add stasis?
+# TO DO: add stasis?
 
 
 ### Step 3: Simulate constant rate of preservation
 
 fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
 plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
-fossils.uni <- dplyr::distinct(fossils.uni.dupl, sp, .keep_all = TRUE)
-plot(fossils.uni, tr, strata = bins, show.strata = TRUE)
+#fossils.uni <- dplyr::distinct(fossils.uni.dupl, sp, .keep_all = TRUE)
+#plot(fossils.uni, tr, strata = bins, show.strata = TRUE)
 
 ### Step 4: Simulate biogeography on tree
 # assumption: approach assumes migration does not influence tree shape
+# calculate threshold values for number of taxa in each geographic area
+# loop to simulate biogeography as a binary character under the Mk model
+# loop keeps track of number of attempts, exits if iteration.limit is reached
+# inputs tree and migration rate
+# outputs traits.bio, object of type double
 
-#traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
+#TO DO: integrate resetting iteration.count before 'if'
 
-# Making sure the number of taxa in each area is nearly equal
 
-## Setting up the parameter of choice
-
-## Lowest fraction of taxa in area 1 permitted
 number_of_tips <- length(tmp)
 L <- round(sum(threshold*number_of_tips))
 H <- sum(number_of_tips-L)
 
-## Run the while loop to get a set of around 100 fossils (+/1 20)
-iteration.limit <- 100
-iteration.count <- 0
+## Run the while loop to get a set of around 100 fossils in each area (+/1 20)
 while(fossils_in_area1 < L || fossils_in_area1 > H) {
   if (iteration.count >= iteration.limit) {
     stop("Failed to converge on a suitable geographical distribution")
   }
   ## Running the biogeography simulation
-  traits.bio = FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio) # simulating biogeography using Mk model
+  traits.bio <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
   ## Updating the number of fossils
   fossils_in_area1 <- sum(traits.bio == '1')
   iteration.count <- iteration.count + 1
 }
 
 
-
 ### Step 5: Simulate biased sampling
-# associate high and low sampling with biogeographical areas
-translate.states = function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
-rates = translate.states(traits.bio, low, high)
-# simulate biased sampling
-fossils.bio.dupl = FossilSim::sim.fossils.poisson(rates, tree = tr)
+# associate high and low sampling with biogeographical areas in traits.bio [input]
+# simulate biased sampling on tree [input]
+# output is fossils.bio = fossil taxa and respective ages when sampling is biased
+
+translate.states <- function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
+rates <- translate.states(traits.bio, low, high)
+
+fossils.bio.dupl <- FossilSim::sim.fossils.poisson(rates, tree = tr)
 plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE)
 #fossils.bio <- dplyr::distinct(fossils.bio.dupl, sp, .keep_all = TRUE) #removing duplicates
 #plot(fossils.bio, tr, strata = bins, show.strata = TRUE)
 
 ### Step 6: Bin fossils and match traits with species & bins
-max.age = FossilSim::tree.max(tr)
-# define interval ages
-int.ages <- seq(0, max.age, length = bins + 1)
-
 # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
+# calculate bin max/min ages based on tree [input] and number of bins
+# 
+
+max.age <- FossilSim::tree.max(tr)
+int.ages <- seq(0, max.age, length = bins + 1)
 
 ###### run Joelle's function
 boop <- bin.taxa(taxa, 3, max.age)
@@ -122,7 +119,9 @@ int.assign <- function(fossils, ints){### function to turn sim.interval.ages int
   fossils
 }
 
-test = int.assign(fossils.bio.binned, int.ages) ##
+bias <- int.assign(fossils.bio.binned, int.ages) ##
+uni <- int.assign(fossils.binned, int.ages)
+all <- int.assign(all.binned, int.ages)
 
 # create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
 #disparity.df <- function(traits, fossils, interval.ages){
@@ -230,15 +229,15 @@ my_trait_space <- traits[, c("trait1", "trait2")]
 
 ## Creating the group vector for dispRity
 my_groups <- list(## All the species
-                  "all_species" = 1:nrow(my_trait_space),
+                  "all_species" = subset(all$sp, all$int == "2"),
                   ## All species in location 1
-                  "area_0" = which(my_geography == 0),
+                  "area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(my_geography == 0))],
                   ## All species in location 2
-                  #"area_1" = which((my_geography$traits.bio == 1) & (my_geography$taxa.sp == 2)), #change column name
+                  "area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(my_geography == 1))],
                   ## The uniform sampled group
-                  "uni_sample" = subset(disp$sp, disp$bin == "2"), #TG: assuming that that $sp column contains the species ID/row number in traits[, c("trait1", "trait2")]
+                  "uni_sample" = subset(uni$sp, uni$int == "2"),
                   ## The biased sampled group
-                  "bias_sample" = subset(disp.bio$sp, disp.bio$bin == "2"))
+                  "bias_sample" = subset(bias$sp, bias$int == "2"))
 
 ## Creating a dispRity object that contains the trait space and the groups
 my_groupings <- custom.subsets(data = my_trait_space,
@@ -267,7 +266,7 @@ simulation.pipeline <- function(birth, death, tips, <other_magic_numbers>) {
 }
 
 #TG: You can then use the function replicate to get some replicates. For example:
-my_5_simulations <- repliate(5, simulation.pipeline(birth = X, death = Y, tips = Z, <other_magic_numbers>))
+my_5_simulations <- replicate(5, simulation.pipeline(birth = X, death = Y, tips = Z, <other_magic_numbers>))
 
 #TG: You can then measure the disparity on the output using lapply (applying a function to a list)
 my_sum_variances <- lapply(my_5_simulations, dispRity, metric = c(sum, variances))
