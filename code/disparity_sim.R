@@ -2,7 +2,7 @@
 
 source("./bin_taxa.R")
 
-set.seed(133)
+set.seed(176)
 
 
 ### Setting up variables
@@ -10,10 +10,10 @@ birth <- 0.1 #birth rate
 death <- 0.05 # death rate
 tips <- 100 # number of tips in tree
 trait_num <- 2 # number of traits we are simulating
-v <- 0.5 # rate of trait evolution
+v <- 0.005 # rate of trait evolution
 rate <- 0.2 # rate of fossilisation
 bins <- 3 # number of time bins
-rate.bio = 0.02 # migration rate 
+rate.bio = 0.005 # migration rate 
 fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 low = 0.0015 # sampling rate for fossils in low sampling area
@@ -22,13 +22,12 @@ iteration.limit <- 100 #number of times loop for generating biogeographic areas 
 iteration.count <- 0 #always set at 0 to start with, aka resetting it
 
 ### Step 1: Simulate tree 
+# current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
+# current assumption: bifurcating speciation = each branch is a species
 tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
 plot(tr)
 
 taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
-
-# current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
-# current assumption: bifurcating speciation = each branch is a species
 
 ### Step 2: Simulate "true" disparity
 # generate new file for storing traits with taxa in it already [input]
@@ -39,8 +38,6 @@ for(i in 1:trait_num){
   traits <- cbind(traits, tmp)
   colnames(traits)[ncol(traits)] <- paste0("trait",i)
 }
-# TO DO: add stasis?
-
 
 ### Step 3: Simulate constant rate of preservation
 
@@ -59,12 +56,10 @@ plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
 
 #TO DO: integrate resetting iteration.count before 'if'
 
-
 number_of_tips <- length(tmp)
 L <- round(sum(threshold*number_of_tips))
 H <- sum(number_of_tips-L)
 
-## Run the while loop to get a set of around 100 fossils in each area (+/1 20)
 while(fossils_in_area1 < L || fossils_in_area1 > H) {
   if (iteration.count >= iteration.limit) {
     stop("Failed to converge on a suitable geographical distribution")
@@ -76,7 +71,6 @@ while(fossils_in_area1 < L || fossils_in_area1 > H) {
   iteration.count <- iteration.count + 1
 }
 
-
 ### Step 5: Simulate biased sampling
 # associate high and low sampling with biogeographical areas in traits.bio [input]
 # simulate biased sampling on tree [input]
@@ -87,8 +81,6 @@ rates <- translate.states(traits.bio, low, high)
 
 fossils.bio.dupl <- FossilSim::sim.fossils.poisson(rates, tree = tr)
 plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE)
-#fossils.bio <- dplyr::distinct(fossils.bio.dupl, sp, .keep_all = TRUE) #removing duplicates
-#plot(fossils.bio, tr, strata = bins, show.strata = TRUE)
 
 ### Step 6: Bin fossils and match traits with species & bins
 # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
@@ -102,8 +94,6 @@ int.ages <- seq(0, max.age, length = bins + 1)
 boop <- bin.taxa(taxa, 3, max.age)
 all.binned <- FossilSim::sim.interval.ages(boop, max.age = max.age, strata = bins, use.species.ages = FALSE)
 
-
-
 # bin fossils for unbiased sampling set
 fossils.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
 # bin fossils for biased sampling set
@@ -114,7 +104,9 @@ int.assign <- function(fossils, ints){### function to turn sim.interval.ages int
     stop("fossils must be binned!")
   fossils$int <- NA
   for(i in 1:(length(ints) - 1)){
-    fossils[which(fossils$hmin == ints[i]),]$int = i
+    if(any(fossils$hmin == ints[i])){
+      fossils[which(fossils$hmin == ints[i]),]$int = i
+    }
   }
   fossils
 }
@@ -146,86 +138,60 @@ all <- int.assign(all.binned, int.ages)
 #  disp
 #}
 
-disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
-disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
-
-h1 <- hist(traits$trait1)
-h2 <- hist(disp$trait1, breaks = h1$breaks)
-h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
-
-plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
-plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
-plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
-
-legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
-       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
-
-plot( (((traits$start - traits$end) / 2) + traits$start), traits$trait1, col = rgb(0,0,1,1/4), pch = 19)
-points(disp$bin.midpoint, disp$trait1, col = rgb(1,0,0,1/4), pch = 19)
-points(disp.bio$bin.midpoint, disp.bio$trait1, col = rgb(0,.5,.5,1/4), pch = 19)
+# disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
+# disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
+# 
+# h1 <- hist(traits$trait1)
+# h2 <- hist(disp$trait1, breaks = h1$breaks)
+# h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
+# 
+# plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
+# plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
+# plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
+# 
+# legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
+#        fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
+# 
+# plot( (((traits$start - traits$end) / 2) + traits$start), traits$trait1, col = rgb(0,0,1,1/4), pch = 19)
+# points(disp$bin.midpoint, disp$trait1, col = rgb(1,0,0,1/4), pch = 19)
+# points(disp.bio$bin.midpoint, disp.bio$trait1, col = rgb(0,.5,.5,1/4), pch = 19)
 
 
 ### Step 7: Compute disparity metrics
-# concatenate matrices
-#concat_matrix <- matrix(nrow = (nrow(traits)+nrow(disp)+nrow(disp.bio)), ncol = trait_num)
-#for(i in 1:trait_num){
-#  t <- paste0("trait",i)
-#  true <- as.matrix(traits[,t])
-#  uni <- as.matrix(disp[,t])
-#  bias <- as.matrix(disp.bio[,t])
-#  concat_matrix[,i] <- rbind(true, uni, bias)
-#}
 
-#head(concat_matrix)
-
-# keys - simulated vectors may have variable lengths 
-#true.mx <- length(traits$trait1)
-#uni.mn <- true.mx + 1
-#uni.mx <- true.mx + length(disp$trait1)
-#bias.mn <- uni.mx + 1
-#bias.mx <- uni.mx + length(disp.bio$trait1)
-
-# ordinating the matrices with traits ### may not need to as traits are independent #TG: probably not needed indeed
-#ordin.all <- prcomp(concat_matrix) #TG: Note also that here some species are duplicated (the traitspace contains 413 species/samples but this trait space has 443 - the bias/uni sampled ones). This creates a bias in the PCA.
-#ordinated_all <- ordin.all$x
-#rownames(ordinated_all) <- c(1:bias.mx)
-
-# compute metric - centroids
-library(dispRity)
-disparity_centr <- dispRity::dispRity.per.group(ordinated_all,
-                                     list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-  metric = centroids) #variance
-# metric = variances)
-disparity_centr
-
-plot(disparity_centr)
-
-#compute metric - sum of variances
-####c(mean,variance))
-disparity_var <- dispRity::dispRity.per.group(ordinated_all,
-                                               list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-                                               metric = variances) #variance
-# metric = variances)
-disparity_var
-
-plot(disparity_var)
-
-plot(disparity_centr, type = "preview")
+# # compute metric - centroids
+# library(dispRity)
+# disparity_centr <- dispRity::dispRity.per.group(ordinated_all,
+#                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
+#   metric = centroids) #variance
+# # metric = variances)
+# disparity_centr
+# 
+# plot(disparity_centr)
+# 
+# #compute metric - sum of variances
+# ####c(mean,variance))
+# disparity_var <- dispRity::dispRity.per.group(ordinated_all,
+#                                                list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
+#                                                metric = variances) #variance
+# # metric = variances)
+# disparity_var
+# plot(disparity_var)
+# plot(disparity_centr, type = "preview")
 
 
 
-
-
-
-
-
-
-## Example script using a different dispRity pipeline
 
 ## Rename some variables
 my_geography <- traits.bio
 #my_geography <- data.frame(traits.bio, taxa$sp) ## change to adding bins not taxa numbers
 my_trait_space <- traits[, c("trait1", "trait2")]
+
+uni_sample <- subset(uni$sp, uni$int == "2")
+uni_sample <- uni_sample[!duplicated(uni_sample)] #removing duplicates
+
+bias_sample <- subset(bias$sp, bias$int == "2")
+bias_sample <- bias_sample[!duplicated(bias_sample)]
 
 ## Creating the group vector for dispRity
 my_groups <- list(## All the species
@@ -235,9 +201,9 @@ my_groups <- list(## All the species
                   ## All species in location 2
                   "area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(my_geography == 1))],
                   ## The uniform sampled group
-                  "uni_sample" = subset(uni$sp, uni$int == "2"),
+                  "uni_sample" = uni_sample,
                   ## The biased sampled group
-                  "bias_sample" = subset(bias$sp, bias$int == "2"))
+                  "bias_sample" = bias_sample)
 
 ## Creating a dispRity object that contains the trait space and the groups
 my_groupings <- custom.subsets(data = my_trait_space,
@@ -251,8 +217,11 @@ disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
 plot(disparity_sum_var)
 #TG: note that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
 #TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
-get.disparity(disparity_sum_var)
+#get.disparity(disparity_sum_var)
 
+
+scatter_data <- cbind(my_trait_space, my_geography)
+ggplot(my_trait_space, aes(x=trait1, y=trait2, color=my_geography)) + geom_point()
 
 
 ## Write pseudo function for the simulation pipeline
