@@ -24,7 +24,6 @@ rate.bio = 0.005 # migration rate
 fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
-iteration.count <- 0 #always set at 0 to start with, aka resetting it
 # Biased sampling
 low = 0.0015 # sampling rate for fossils in low sampling area
 high = 0.5 # sampling rate for fossils in high sampling area
@@ -63,7 +62,7 @@ simulate_one_set <- function(){
   number_of_tips <- length(tmp)
   L <- round(sum(threshold*number_of_tips))
   H <- sum(number_of_tips-L)
-  
+  iteration.count <- 0 #always set at 0, resetting it
   while(fossils_in_area1 < L || fossils_in_area1 > H) {
     if (iteration.count >= iteration.limit) {
       stop("Failed to converge on a suitable geographical distribution")
@@ -225,7 +224,7 @@ plot(disparity_sum_var)
 #TG: note that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
 #TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
 #get.disparity(disparity_sum_var)
-
+extract.dispRity(disparity_sum_var)
 
 scatter_data <- cbind(my_trait_space, my_geography)
 ggplot(my_trait_space, aes(x=trait1, y=trait2, color=my_geography)) + geom_point()
