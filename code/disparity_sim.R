@@ -11,16 +11,16 @@ set.seed(17)
 ### Setting up variables
 
 # Trees
-birth <- 0.1 #birth rate
+birth <- 0.1 # birth rate
 death <- 0.05 # death rate
-tips <- 100 # number of tips in tree
+tips <- 10 # number of tips in tree
 # Traits
 trait_num <- 2 # number of traits we are simulating
 v <- 0.005 # rate of trait evolution
 # Uniform Sampling
 rate <- 0.2 # rate of fossilisation
 # Biogeography simulation
-rate.bio = 0.001 # migration rate 
+rate.bio = 0.05 # migration rate 
 fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
@@ -29,6 +29,9 @@ low = 0.0015 # sampling rate for fossils in low sampling area
 high = 0.5 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
+
+fcol1 <- "#FF6EB4"
+fcol2 <- "#C0FF3E"
 
 num_rep <- 5
 
@@ -42,7 +45,7 @@ simulation.pipeline <- function(){
     # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
     # current assumption: bifurcating speciation = each branch is a species
     tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
-    plot(tr)
+    #plot(tr)
     
     taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
     
@@ -105,7 +108,10 @@ simulation.pipeline <- function(){
   rates <- translate.states(traits.bio, low, high)
   
   fossils.bio.dupl <- FossilSim::sim.fossils.poisson(rates, tree = tr)
-  plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE)
+  
+  # colours
+  fcols = sapply((traits.bio[unlist(sapply(fossils.bio.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fcol1 else fcol2)
+  plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fcols)
   
   ### Step 6: Bin fossils and match traits with species & bins
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
