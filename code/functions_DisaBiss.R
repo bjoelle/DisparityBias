@@ -2,7 +2,7 @@
 # generate new file for storing traits with taxa in it already [input]
 # simulate trait_num number of traits and append to traits file [output]
 
-generate.traits <- function(taxa, trait_num, tree, v){
+generate.traits <- function(taxa, trait_num, tr, v){
   traits <- taxa
   for(i in 1:trait_num){
     tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)

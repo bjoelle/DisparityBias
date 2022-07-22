@@ -13,7 +13,7 @@ set.seed(17)
 # Trees
 birth <- 0.1 #birth rate
 death <- 0.05 # death rate
-tips <- 300 # number of tips in tree
+tips <- 100 # number of tips in tree
 # Traits
 trait_num <- 2 # number of traits we are simulating
 v <- 0.005 # rate of trait evolution
@@ -42,7 +42,7 @@ simulate_one_set <- function(){
   
   
   ### Step 2: Simulate "true" disparity
-  tmp2 <- generate.traits(taxa, trait_num, tr, v)
+  traits <- generate.traits(taxa, trait_num, tr, v)
   
   ### Step 3: Simulate constant rate of preservation
   
@@ -59,7 +59,7 @@ simulate_one_set <- function(){
   
   #TO DO: integrate resetting iteration.count before 'if'
   
-  number_of_tips <- length(tmp)
+  number_of_tips <- length(traits$sp)
   L <- round(sum(threshold*number_of_tips))
   H <- sum(number_of_tips-L)
   iteration.count <- 0 #always set at 0, resetting it
@@ -137,7 +137,7 @@ simulate_one_set <- function(){
     )
   
   ## Creating a dispRity object that contains the trait space and the groups
-  my_groupings <- custom.subsets(data = my_trait_space,
+  my_groupings <- custom.subsets(data = as.matrix(my_trait_space),
                                  group = my_groups)
   #TG: ignore the warning (or read it to know what it just did ;) - but nothing bad happening here)
   
