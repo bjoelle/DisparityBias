@@ -20,7 +20,7 @@ v <- 0.005 # rate of trait evolution
 # Uniform Sampling
 rate <- 0.2 # rate of fossilisation
 # Biogeography simulation
-rate.bio = 0.05 # migration rate 
+rate.bio = 0.001 # migration rate 
 fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
@@ -30,52 +30,73 @@ high = 0.5 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
 
-num_rep <- 3
+num_rep <- 5
 
 simulation.pipeline <- function(){
-  
-  ### Step 1: Simulate tree 
-  # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
-  # current assumption: bifurcating speciation = each branch is a species
-  tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
-  plot(tr)
-  
-  taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
-  
-  
-  ### Step 2: Simulate "true" disparity
-  traits <- generate.traits(taxa, trait_num, tr, v)
-  
-  ### Step 3: Simulate constant rate of preservation
-  
-  fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
-  plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
- 
-  ### Step 4: Simulate biogeography on tree
-  # assumption: approach assumes migration does not influence tree shape
-  # calculate threshold values for number of taxa in each geographic area
-  # loop to simulate biogeography as a binary character under the Mk model
-  # loop keeps track of number of attempts, exits if iteration.limit is reached
-  # inputs tree and migration rate
-  # outputs traits.bio, object of type double
-  
-  #TO DO: integrate resetting iteration.count before 'if'
-  
-  number_of_tips <- length(traits$sp)
-  L <- round(sum(threshold*number_of_tips))
-  H <- sum(number_of_tips-L)
-  iteration.count <- 0 #always set at 0, resetting it
-  while(fossils_in_area1 < L || fossils_in_area1 > H) {
-    if (iteration.count >= iteration.limit) {
-      stop("Failed to converge on a suitable geographical distribution")
+
+  biogeography.stuck.count <- 0
+  repeat {
+  biogeography.stuck <- FALSE
+    #  while #while biogeography loop failed, loop through code. If biogeography succeeds, continue
+    ### Step 1: Simulate tree 
+    # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
+    # current assumption: bifurcating speciation = each branch is a species
+    tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
+    plot(tr)
+    
+    taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
+    
+    
+    ### Step 2: Simulate "true" disparity
+    traits <- generate.traits(taxa, trait_num, tr, v)
+    
+    ### Step 3: Simulate constant rate of preservation
+    
+    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
+    plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
+    
+    ### Step 4: Simulate biogeography on tree
+    # assumption: approach assumes migration does not influence tree shape
+    # calculate threshold values for number of taxa in each geographic area
+    # loop to simulate biogeography as a binary character under the Mk model
+    # loop keeps track of number of attempts, exits if iteration.limit is reached
+    # inputs tree and migration rate
+    # outputs traits.bio, object of type double
+    
+    #TO DO: integrate resetting iteration.count before 'if'
+    
+    number_of_tips <- length(traits$sp)
+    L <- round(sum(threshold*number_of_tips))
+    H <- sum(number_of_tips-L)
+    iteration.count <- 0 #always set at 0, resetting it
+    #  biogeography.stuck = FALSE
+    while(fossils_in_area1 < L || fossils_in_area1 > H) {
+
+      ## Running the biogeography simulation
+      traits.bio <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
+      ## Updating the number of fossils
+      fossils_in_area1 <- sum(traits.bio == '1')
+      iteration.count <- iteration.count + 1
+      if (iteration.count >= iteration.limit) {
+        biogeography.stuck = TRUE
+      }
+      if (biogeography.stuck == TRUE) {
+        break
+      }
     }
-    ## Running the biogeography simulation
-    traits.bio <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
-    ## Updating the number of fossils
-    fossils_in_area1 <- sum(traits.bio == '1')
-    iteration.count <- iteration.count + 1
+    
+    if (biogeography.stuck == TRUE){
+      biogeography.stuck.count <- biogeography.stuck.count + 1
+      if (biogeography.stuck.count >= num_rep*2) {
+        stop("Stuck in deep biogeography mud")
+      }      
+    }
+    else
+    {
+      break
+    }
+
   }
-  
   ### Step 5: Simulate biased sampling
   # associate high and low sampling with biogeographical areas in traits.bio [input]
   # simulate biased sampling on tree [input]
@@ -243,10 +264,10 @@ simulation.pipeline <- function(){
 # }
 
 #TG: You can then use the function replicate to get some replicates. For example:
-my_5_simulations <- replicate(num_rep, simulation.pipeline(), simplify = FALSE)
+my_simulations <- replicate(num_rep, simulation.pipeline(), simplify = FALSE)
 
 #TG: You can then measure the disparity on the output using lapply (applying a function to a list)
-my_sum_variances <- lapply(my_5_simulations, dispRity, metric = c(sum, variances))
+my_sum_variances <- lapply(my_simulations, dispRity, metric = c(sum, variances))
 
 #TG: You can then extract the disparity values (the point estimates explained above)
 my_point_estimates <- lapply(my_sum_variances, extract.dispRity)
