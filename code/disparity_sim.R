@@ -20,7 +20,7 @@ v <- 0.005 # rate of trait evolution
 # Uniform Sampling
 rate <- 0.2 # rate of fossilisation
 # Biogeography simulation
-rate.bio = 0.005 # migration rate 
+rate.bio = 0.05 # migration rate 
 fossils_in_area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
@@ -30,7 +30,9 @@ high = 0.5 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
 
-simulate_one_set <- function(){
+num_rep <- 3
+
+simulation.pipeline <- function(){
   
   ### Step 1: Simulate tree 
   # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs between species
@@ -145,7 +147,7 @@ simulate_one_set <- function(){
   
 }
 
-tmp = simulate_one_set()
+#tmp = simulate_one_set()
 
 # create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
 #disparity.df <- function(traits, fossils, interval.ages){
@@ -212,43 +214,59 @@ tmp = simulate_one_set()
 # plot(disparity_centr, type = "preview")
 
 
-my_groupings = tmp
+#my_groupings = tmp
 
 
 
 ## Calculating disparity on these groups
-disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
+#disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
 
 ## Hop
-plot(disparity_sum_var)
+#plot(disparity_sum_var)
 #TG: note that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
 #TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
 #get.disparity(disparity_sum_var)
-extract.dispRity(disparity_sum_var)
+#extract.dispRity(disparity_sum_var)
 
-scatter_data <- cbind(my_trait_space, my_geography)
-ggplot(my_trait_space, aes(x=trait1, y=trait2, color=my_geography)) + geom_point()
+#scatter_data <- cbind(my_trait_space, my_geography)
+#ggplot(my_trait_space, aes(x=trait1, y=trait2, color=my_geography)) + geom_point()
 
 
 ## Write pseudo function for the simulation pipeline
-simulation.pipeline <- function(birth, death, tips, <other_magic_numbers>) {
-  ## Simulating the data
-  <the pipeline that simulates the species, the traits and the sampling bias>
-  ## Preparing the data
-  <the code to create the trait space to be fed to dispRity, like the code from above with my_groups and custom.subsets>
-  ## The output
-  return(<the bit to be returned, again, I suggest outputing the my_groupings variable from the example above>)
-}
+# simulation.pipeline <- function(birth, death, tips, <other_magic_numbers>) {
+#   ## Simulating the data
+#   <the pipeline that simulates the species, the traits and the sampling bias>
+#   ## Preparing the data
+#   <the code to create the trait space to be fed to dispRity, like the code from above with my_groups and custom.subsets>
+#   ## The output
+#   return(<the bit to be returned, again, I suggest outputing the my_groupings variable from the example above>)
+# }
 
 #TG: You can then use the function replicate to get some replicates. For example:
-my_5_simulations <- replicate(5, simulation.pipeline(birth = X, death = Y, tips = Z, <other_magic_numbers>))
+my_5_simulations <- replicate(num_rep, simulation.pipeline(), simplify = FALSE)
 
 #TG: You can then measure the disparity on the output using lapply (applying a function to a list)
 my_sum_variances <- lapply(my_5_simulations, dispRity, metric = c(sum, variances))
 
 #TG: You can then extract the disparity values (the point estimates explained above)
-my_point_estimates <- lapply(my_sum_variances, get.disparity)
+my_point_estimates <- lapply(my_sum_variances, extract.dispRity)
 
 ##TG: And you can combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
 my_results_table <- do.call(rbind, my_point_estimates)
-boxplot(my_results_table)
+
+columns <- c("values", "sampling")
+result <- data.frame(matrix(nrow = 0, ncol = length(columns)))
+colnames(result) <- columns
+
+for (i in 1:ncol(my_results_table)){
+  for (j in my_results_table[,i]){
+    current.row = c(j,colnames(my_results_table)[i])
+    result[nrow(result) + 1,] <- current.row
+  }
+}
+
+result$sampling <- as.factor(result$sampling)
+result$values <- as.numeric(result$values)
+p <- ggplot(result, aes(x=sampling, y=values)) +
+  geom_boxplot()
+p
