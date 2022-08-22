@@ -1,11 +1,11 @@
 
 # generate new file for storing traits with taxa in it already [input]
-# simulate trait_num number of traits and append to traits file [output]
+# simulate trait.num number of traits and append to traits file [output]
 
-generate.traits <- function(taxa, trait_num, tr, v){
+generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
   traits <- taxa
-  for(i in 1:trait_num){
-    tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = v, min.value = 0)
+  for(i in 1:trait.num){
+    tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = trait.evol.rate, min.value = 0)
     traits <- cbind(traits, tmp)
     colnames(traits)[ncol(traits)] <- paste0("trait",i)
   }
@@ -15,8 +15,8 @@ generate.traits <- function(taxa, trait_num, tr, v){
 
 
 
-# associate high and low sampling with biogeographical areas in traits.bio [input]
-translate.states <- function(traits.bio, low, high) sapply(traits.bio, function(t) if(t == 1) low else high)
+# associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
+translate.states <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
 
 
 #turns all taxa into a format useable by FossilSim so that time binning can occur
@@ -64,7 +64,7 @@ int.assign <- function(fossils, ints){
 
 
 
-simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio, fossils_in_area1, threshold, iteration.limit, low, high, bins, fcol1, fcol2){
+simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2){
   
   biogeography.stuck.count <- 0
   repeat {
@@ -80,11 +80,11 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
     
     
     ### Step 2: Simulate "true" disparity
-    traits <- generate.traits(taxa, trait_num, tr, v)
+    traits <- generate.traits(taxa, trait.num, tr, trait.evol.rate)
     
     ### Step 3: Simulate constant rate of preservation
     
-    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = rate, tree = tr)
+    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, tree = tr)
     plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
     
     ### Step 4: Simulate biogeography on tree
@@ -93,7 +93,7 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
     # loop to simulate biogeography as a binary character under the Mk model
     # loop keeps track of number of attempts, exits if iteration.limit is reached
     # inputs tree and migration rate
-    # outputs traits.bio, object of type double
+    # outputs fossil.biogeographic.area, object of type double
     
     #TO DO: integrate resetting iteration.count before 'if'
     
@@ -102,12 +102,12 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
     H <- sum(number_of_tips-L)
     iteration.count <- 0 #always set at 0, resetting it
     #  biogeography.stuck = FALSE
-    while(fossils_in_area1 < L || fossils_in_area1 > H) {
+    while(fossils.in.area1 < L || fossils.in.area1 > H) {
       
       ## Running the biogeography simulation
-      traits.bio <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = rate.bio)
+      fossil.biogeographic.area <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = migration.rate)
       ## Updating the number of fossils
-      fossils_in_area1 <- sum(traits.bio == '1')
+      fossils.in.area1 <- sum(fossil.biogeographic.area == '1')
       iteration.count <- iteration.count + 1
       if (iteration.count >= iteration.limit) {
         biogeography.stuck = TRUE
@@ -119,7 +119,7 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
     
     if (biogeography.stuck == TRUE){
       biogeography.stuck.count <- biogeography.stuck.count + 1
-      if (biogeography.stuck.count >= num_rep*2) {
+      if (biogeography.stuck.count >= num.rep*2) {
         stop("Stuck in deep biogeography mud")
       }      
     }
@@ -130,17 +130,17 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
     
   }
   ### Step 5: Simulate biased sampling
-  # associate high and low sampling with biogeographical areas in traits.bio [input]
+  # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
   # simulate biased sampling on tree [input]
   # output is fossils.bio = fossil taxa and respective ages when sampling is biased
   
-  rates <- translate.states(traits.bio, low, high)
+  rates <- translate.states(fossil.biogeographic.area, low.sampling, high.sampling)
   
   fossils.bio.dupl <- FossilSim::sim.fossils.poisson(rates, tree = tr)
   
   # colours
-  fcols = sapply((traits.bio[unlist(sapply(fossils.bio.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fcol1 else fcol2)
-  plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fcols)
+  fossil.colours = sapply((fossil.biogeographic.area[unlist(sapply(fossils.bio.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
+  plot(fossils.bio.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours)
   
   ### Step 6: Bin fossils and match traits with species & bins
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
@@ -169,8 +169,8 @@ simulation.pipeline <- function(birth, death, tips, trait_num, v, rate, rate.bio
   #            traits = traits, traits.bio = traits.bio))
   
   ## Rename some variables
-  my_geography <- traits.bio
-  #my_geography <- data.frame(traits.bio, taxa$sp) ## change to adding bins not taxa numbers
+  my_geography <- fossil.biogeographic.area
+  #my_geography <- data.frame(fossil.biogeographic.area, taxa$sp) ## change to adding bins not taxa numbers
   my_trait_space <- traits[, c("trait1", "trait2")]
   
   uni_sample <- subset(uni$sp, uni$int == "2")
