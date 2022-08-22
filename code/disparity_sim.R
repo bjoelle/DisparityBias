@@ -29,7 +29,7 @@ low = 0.0015 # sampling rate for fossils in low sampling area
 high = 0.5 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
-
+#Colours for fossils in tree plots
 fcol1 <- "#FF6EB4"
 fcol2 <- "#C0FF3E"
 
@@ -174,101 +174,7 @@ simulation.pipeline <- function(){
   
 }
 
-#tmp = simulate_one_set()
-
-# create a new data.frame for disparity analyses based on sampled species in each bin, puts data in format for disparity analysis
-#disparity.df <- function(traits, fossils, interval.ages){
-#  if(identical(fossils$hmin, fossils$hmax))
-#    stop("fossils must be binned!")
-#  disp <- data.frame()
-#  for(i in 1:(bins - 1)){
-#    hmin <- interval.ages[i]
-#    hmax <- interval.ages[i+1]
-#    tmp <- subset(fossils, hmin == interval.ages[i])
-#    tmp <- unique(tmp)
-#    for(j in tmp$sp){
-#      tmp2 <- data.frame(bin = i, sp = j, bin.midpoint = mean(c(hmin, hmax)))
-#      for(k in 1:trait_num){
-#        t <- traits[which(traits$sp == j),][paste0("trait",k)][[1]]
-#        tmp2 <- cbind(tmp2, data.frame(tc = t))
-#        colnames(tmp2)[ncol(tmp2)] <-  paste0("trait",k)
-#      }
-#      disp <- rbind(disp, tmp2) 
-#    }
-#  }
-#  disp
-#}
-
-# disp <- disparity.df(traits, fossils.binned, int.ages) ## ? sampled fossils with uniform sampling
-# disp.bio <- disparity.df(traits, fossils.bio.binned, int.ages) ## ? sampled fossils with biased sampling
-# 
-# h1 <- hist(traits$trait1)
-# h2 <- hist(disp$trait1, breaks = h1$breaks)
-# h3 <- hist(disp.bio$trait1, breaks = h1$breaks)
-# 
-# plot( h1, col=rgb(0,0,1,1/4), xlab = "Trait values", main = NULL)  # first histogram
-# plot( h2, col=rgb(1,0,0,1/4), add=T)  # second
-# plot( h3, col=rgb(0,0.8,0.6,1/4), add=T)  # third
-# 
-# legend(x = "topright", legend = c("True disparity", "Uniform sampling","Biased sampling"),
-#        fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4), rgb(0,.5,.5,1/4)) )
-# 
-# plot( (((traits$start - traits$end) / 2) + traits$start), traits$trait1, col = rgb(0,0,1,1/4), pch = 19)
-# points(disp$bin.midpoint, disp$trait1, col = rgb(1,0,0,1/4), pch = 19)
-# points(disp.bio$bin.midpoint, disp.bio$trait1, col = rgb(0,.5,.5,1/4), pch = 19)
-
-
-### Step 7: Compute disparity metrics
-
-# # compute metric - centroids
-# library(dispRity)
-# disparity_centr <- dispRity::dispRity.per.group(ordinated_all,
-#                                      list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-#   metric = centroids) #variance
-# # metric = variances)
-# disparity_centr
-# 
-# plot(disparity_centr)
-# 
-# #compute metric - sum of variances
-# ####c(mean,variance))
-# disparity_var <- dispRity::dispRity.per.group(ordinated_all,
-#                                                list(trueO = c(1:true.mx), uni = c(uni.mn:uni.mx), bias = c(bias.mn:bias.mx)),
-#                                                metric = variances) #variance
-# # metric = variances)
-# disparity_var
-# plot(disparity_var)
-# plot(disparity_centr, type = "preview")
-
-
-#my_groupings = tmp
-
-
-
-## Calculating disparity on these groups
-#disparity_sum_var <- dispRity(my_groupings, metric = c(sum, variances))
-
-## Hop
-#plot(disparity_sum_var)
-#TG: note that these are now point estimates (one disparity value per group) hence the absence of variance. You'll get the variance from replicating the simulations (see pseudo code below).
-#TG: to just get the values you can use the function get.disparity (see example in the pseudo code below)
-#get.disparity(disparity_sum_var)
-#extract.dispRity(disparity_sum_var)
-
-#scatter_data <- cbind(my_trait_space, my_geography)
-#ggplot(my_trait_space, aes(x=trait1, y=trait2, color=my_geography)) + geom_point()
-
-
-## Write pseudo function for the simulation pipeline
-# simulation.pipeline <- function(birth, death, tips, <other_magic_numbers>) {
-#   ## Simulating the data
-#   <the pipeline that simulates the species, the traits and the sampling bias>
-#   ## Preparing the data
-#   <the code to create the trait space to be fed to dispRity, like the code from above with my_groups and custom.subsets>
-#   ## The output
-#   return(<the bit to be returned, again, I suggest outputing the my_groupings variable from the example above>)
-# }
-
+#### Analysis
 #TG: You can then use the function replicate to get some replicates. For example:
 my_simulations <- replicate(num_rep, simulation.pipeline(), simplify = FALSE)
 
