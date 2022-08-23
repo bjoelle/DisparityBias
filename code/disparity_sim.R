@@ -13,7 +13,7 @@ set.seed(20)
 # Trees
 birth <- 0.1 # birth rate
 death <- 0.05 # death rate
-tips <- 100 # number of tips in tree
+tips <- 1000 # number of tips in tree
 # Traits
 trait.num <- 2 # number of traits we are simulating
 trait.evol.rate <- 0.005 # rate of trait evolution
@@ -25,7 +25,7 @@ fossils.in.area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
 # Biased sampling
-low.sampling <- 0.0005 # sampling rate for fossils in low sampling area
+low.sampling <- 0.0003 # sampling rate for fossils in low sampling area
 high.sampling <- 0.1 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
@@ -33,7 +33,7 @@ bins <- 3 # number of time bins
 fossil.colour1 <- "#FF6EB4"
 fossil.colour2 <- "#C0FF3E"
 
-num.rep <- 2
+num.rep <- 8
 
 #Running the simulations
 simulations <- replicate(num.rep, simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2), simplify = FALSE)

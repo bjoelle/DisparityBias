@@ -16,8 +16,9 @@ generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
 
 
 # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
-translate.states <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
+translate.states.0 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
 
+translate.states.1 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 0) low.sampling else high.sampling)
 
 #turns all taxa into a format useable by FossilSim so that time binning can occur
 bin.taxa = function(taxa, nbins, max.age) {
@@ -134,14 +135,26 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   # simulate biased sampling on tree [input]
   # output is fossils.bias = fossil taxa and respective ages when sampling is biased
   
-  sampling.rate <- translate.states(fossil.biogeographic.area, low.sampling, high.sampling)
+  ## Low sampling in area 1, high sampling in area 0
+  sampling.rate.0 <- translate.states.0(fossil.biogeographic.area, low.sampling, high.sampling)
   
-  fossils.bias.dupl <- FossilSim::sim.fossils.poisson(sampling.rate, tree = tr)
+  fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, tree = tr)
   
   # colourful plots
-  fossil.colours <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
-  plot(fossils.bias.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours)
+  fossil.colours.0 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.0.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
+  plot(fossils.bias.0.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.0)
+
+  ## Low sampling in area 0, high sampling in area 1
+  sampling.rate.1 <- translate.states.1(fossil.biogeographic.area, low.sampling, high.sampling)
   
+  fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, tree = tr)
+  
+  # colourful plots
+  fossil.colours.1 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.1.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
+  plot(fossils.bias.1.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.1)
+  
+  
+    
   ### Step 6: Bin fossils and match traits with species & bins
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
   # calculate bin max/min ages based on tree [input] and number of bins
@@ -156,11 +169,13 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   # bin fossils for unbiased sampling set
   fossils.uni.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
   # bin fossils for biased sampling set
-  fossils.bias.binned <- FossilSim::sim.interval.ages(fossils.bias.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.bias.0.binned <- FossilSim::sim.interval.ages(fossils.bias.0.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.bias.1.binned <- FossilSim::sim.interval.ages(fossils.bias.1.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
   
   
   
-  bias <- int.assign(fossils.bias.binned, int.ages) ##
+  bias.0 <- int.assign(fossils.bias.0.binned, int.ages)
+  bias.1 <- int.assign(fossils.bias.1.binned, int.ages)
   uni <- int.assign(fossils.uni.binned, int.ages)
   all <- int.assign(fossils.all.binned, int.ages)
 
@@ -170,20 +185,25 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   uni.sample <- subset(uni$sp, uni$int == "2")
   uni.sample <- uni.sample[!duplicated(uni.sample)] #removing duplicates
   
-  bias.sample <- subset(bias$sp, bias$int == "2")
-  bias.sample <- bias.sample[!duplicated(bias.sample)]
+  bias.0.sample <- subset(bias.0$sp, bias.0$int == "2")
+  bias.0.sample <- bias.0.sample[!duplicated(bias.0.sample)]
+
+  bias.1.sample <- subset(bias.1$sp, bias.1$int == "2")
+  bias.1.sample <- bias.1.sample[!duplicated(bias.1.sample)]
   
   ## Creating the group vector for dispRity
   my.groups <- list(## All the species
     "all_species" = subset(all$sp, all$int == "2"),
     ## All species in location 1
-    "area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossils.biogeographic.area == 0))],
+    "area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
     ## All species in location 2
-    "area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossils.biogeographic.area == 1))],
+    "area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
     ## The uniform sampled group
     "uni_sample" = uni.sample,
     ## The biased sampled group
-    "bias_sample" = bias.sample,
+    "bias_0_sample" = bias.0.sample,
+    ## The biased sampled group
+    "bias_1_sample" = bias.1.sample,
     ## unif species sampling
     "uni_species" = sample(subset(all$sp, all$int == "2"), 20)
   )
