@@ -20,7 +20,7 @@ trait.evol.rate <- 0.005 # rate of trait evolution
 # Uniform Sampling
 fossilisation.rate <- 0.1 # rate of fossilisation
 # Biogeography simulation
-migration.rate <- 0.05 # migration rate 
+migration.rate <- 0.03 # migration rate 
 fossils.in.area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
@@ -33,21 +33,28 @@ bins <- 3 # number of time bins
 fossil.colour1 <- "#FF6EB4"
 fossil.colour2 <- "#C0FF3E"
 
-num.rep <- 3
+num.rep <- 5
 
-#Running the simulations
+# Running the simulations
 simulations <- replicate(num.rep, simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2), simplify = FALSE)
 
+# Check if enough samples present in subsamples
+for (i in 1:num.rep){
+  if (lengths(simulations[[i]]$subsets$area_0) < 40 || lengths(simulations[[i]]$subsets$area_1) < 40) {
+    print("Too few fossils in run")
+  }
+  else print("All good")
+}
 
 
 #### Analysis -- Sum of variances
-#Measure the disparity on the output using lapply (applying a function to a list)
+# Measure the disparity on the output using lapply (applying a function to a list)
 sum.variances <- lapply(simulations, dispRity, metric = c(sum, variances))
 
-#Extract the disparity values (the point estimates explained above)
+# Extract the disparity values (the point estimates explained above)
 point.estimates.sumv <- lapply(sum.variances, extract.dispRity)
 
-##Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
+## Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
 results.table.sumv <- do.call(rbind, point.estimates.sumv)
 
 columns <- c("values", "sampling")
