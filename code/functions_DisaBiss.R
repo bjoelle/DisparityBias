@@ -14,11 +14,11 @@ generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
 
 
 
-
 # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
 translate.states.0 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
-
 translate.states.1 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 0) low.sampling else high.sampling)
+
+
 
 #turns all taxa into a format useable by FossilSim so that time binning can occur
 bin.taxa = function(taxa, nbins, max.age) {
@@ -48,6 +48,7 @@ bin.taxa = function(taxa, nbins, max.age) {
   
   FossilSim::fossils(fs)
 }
+
 
 
 ### function to turn sim.interval.ages into defined/numbered time bins
@@ -137,7 +138,6 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   
   ## Low sampling in area 1, high sampling in area 0
   sampling.rate.0 <- translate.states.0(fossil.biogeographic.area, low.sampling, high.sampling)
-  
   fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, tree = tr)
   
   # colourful plots
@@ -146,7 +146,6 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
 
   ## Low sampling in area 0, high sampling in area 1
   sampling.rate.1 <- translate.states.1(fossil.biogeographic.area, low.sampling, high.sampling)
-  
   fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, tree = tr)
   
   # colourful plots

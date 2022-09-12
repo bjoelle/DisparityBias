@@ -4,9 +4,7 @@ setwd("~/Desktop/disparity/DisparityBias/code/")
 
 source("functions_DisaBiss.R")
 
-
 set.seed(20)
-
 
 ### Setting up variables
 
@@ -25,15 +23,15 @@ fossils.in.area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
 # Biased sampling
-low.sampling <- 0.0003 # sampling rate for fossils in low sampling area
-high.sampling <- 0.08 # sampling rate for fossils in high sampling area
+low.sampling <- 0.00003 # sampling rate for fossils in low sampling area
+high.sampling <- 0.8 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins
 #Colours for fossils in tree plots
 fossil.colour1 <- "#FF6EB4"
 fossil.colour2 <- "#C0FF3E"
 
-num.rep <- 5
+num.rep <- 3
 
 ### Running the simulations
 simulations <- replicate(num.rep, simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2), simplify = FALSE)
@@ -45,42 +43,6 @@ for (i in 1:num.rep){
   }
   else print("All good")
 }
-
-
-
-
-### Scatter plot
-
-all_species <- simulations[[1]]$subsets$all_species
-area_0 <- simulations[[1]]$subsets$area_0
-area_1 <- simulations[[1]]$subsets$area_1
-bias_0 <- simulations[[1]]$subsets$bias_0_sample
-bias_1 <- simulations[[1]]$subsets$bias_1_sample
-
-traits <- simulations[[1]]$matrix
-
-#plot all traits
-traits.df <- as.data.frame(traits)
-a <-ggplot(traits.df, aes(x=trait1, y=trait2)) + geom_point()
-
-#add column to data frame
-len <- nrow(traits.df)
-geog <- rep(5,len)
-traits.df <- cbind(traits.df, geog = geog) #prepopulate with 0s
-
-#loop through dataframe, if row should be area 1 ten change column value
-
-for (j in 1:nrow(traits.df)){
-  traits.df$geog <- (traits.df$geog + 1)
-}
-
-
-
-bob <- sapply(geog, function(j) if )
-
-%in% which(rownames(traits.df) == bias_0)
-
-
 
 
 #### Analysis -- Sum of variances
