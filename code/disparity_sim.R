@@ -11,7 +11,7 @@ set.seed(20)
 # Trees
 birth <- 0.1 # birth rate
 death <- 0.05 # death rate
-tips <- 1000 # number of tips in tree
+tips <- 200 # number of tips in tree
 # Traits
 trait.num <- 2 # number of traits we are simulating
 trait.evol.rate <- 0.001 # rate of trait evolution
@@ -23,7 +23,7 @@ fossils.in.area1 <- 0 # setting up parameter for checking spatial split
 threshold <- 0.45 # threshold for spatial split between areas 0 and 1
 iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
 # Biased sampling
-low.sampling <- 0.00003 # sampling rate for fossils in low sampling area
+low.sampling <- 0 # sampling rate for fossils in low sampling area
 high.sampling <- 0.8 # sampling rate for fossils in high sampling area
 # Time binning
 bins <- 3 # number of time bins

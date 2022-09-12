@@ -5,7 +5,7 @@
 generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
   traits <- taxa
   for(i in 1:trait.num){
-    tmp <- FossilSim::sim.trait.values(init = 5, tree = tr, model = "BM", v = trait.evol.rate, min.value = 0)
+    tmp <- FossilSim::sim.trait.values(init = 5, taxonomy = taxa, model = "BM", v = trait.evol.rate, min.value = 0)
     traits <- cbind(traits, tmp)
     colnames(traits)[ncol(traits)] <- paste0("trait",i)
   }
@@ -86,7 +86,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
     
     ### Step 3: Simulate constant rate of preservation
     
-    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, tree = tr)
+    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, taxonomy = taxa)
     plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
     
     ### Step 4: Simulate biogeography on tree
@@ -107,7 +107,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
     while(fossils.in.area1 < L || fossils.in.area1 > H) {
       
       ## Running the biogeography simulation
-      fossil.biogeographic.area <- FossilSim::sim.trait.values(1, tree = tr, model = "Mk", v = migration.rate)
+      fossil.biogeographic.area <- FossilSim::sim.trait.values(1, taxonomy = taxa, model = "Mk", v = migration.rate)
       ## Updating the number of fossils
       fossils.in.area1 <- sum(fossil.biogeographic.area == '1')
       iteration.count <- iteration.count + 1
@@ -138,7 +138,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   
   ## Low sampling in area 1, high sampling in area 0
   sampling.rate.0 <- translate.states.0(fossil.biogeographic.area, low.sampling, high.sampling)
-  fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, tree = tr)
+  fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, taxonomy = taxa)
   
   # colourful plots
   fossil.colours.0 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.0.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
@@ -146,7 +146,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
 
   ## Low sampling in area 0, high sampling in area 1
   sampling.rate.1 <- translate.states.1(fossil.biogeographic.area, low.sampling, high.sampling)
-  fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, tree = tr)
+  fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, taxonomy = taxa)
   
   # colourful plots
   fossil.colours.1 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.1.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
