@@ -35,4 +35,7 @@ df = rbind(df, data.frame(trait1 = simulations[[1]]$matrix[[1]][,1][simulations[
                           area = "biased sampling area 0"))
 
 
-ggplot(df, aes(x = trait1, y = trait2)) + geom_point(aes(colour = factor(area)))
+
+ggplot(df, aes(x = trait1, y = trait2)) + geom_point(aes(colour = factor(area)), alpha = 0.5) + theme_classic()
+
+
