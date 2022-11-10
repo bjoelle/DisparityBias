@@ -39,8 +39,10 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
     #  biogeography.stuck = FALSE
     while(fossils.in.area1 < L || fossils.in.area1 > H) {
       
+      ##state at the root = ensures root state is randomised, i.e. in approx 50% of tree root state will have low sampling (and vice versa)
+      root_state = sample(c(0, 1), 1)
       ## Running the biogeography simulation
-      fossil.biogeographic.area <- FossilSim::sim.trait.values(1, taxonomy = taxa, model = "Mk", v = migration.rate)
+      fossil.biogeographic.area <- FossilSim::sim.trait.values(root_state, taxonomy = taxa, model = "Mk", v = migration.rate)
       ## Updating the number of fossils
       fossils.in.area1 <- sum(fossil.biogeographic.area == '1')
       iteration.count <- iteration.count + 1

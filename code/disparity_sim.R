@@ -17,7 +17,7 @@ outdir="/Users/warnock/Documents/files/work/research/projects/DisparityBias/outp
 # Trees
 birth <- 0.1 # birth rate
 death <- 0.075 # death rate
-tips <- 1000 # number of tips in tree
+tips <- 200 # number of tips in tree
 
 # Traits
 trait.num <- 2 # number of traits we are simulating
@@ -48,6 +48,7 @@ num.rep <- 1
 
 ### Running the simulations RW: switched to lapply so I can use the iteration number within the function
 simulations <- lapply(1:num.rep, function(x){simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, x)})
+if(!dir.exists(outdir)) dir.create(outdir)
 save(simulations, file = paste0(outdir, "data.RData")) #TODO: need a naming convention for different simulation conditions
 
 # Check if enough samples present in subsamples
