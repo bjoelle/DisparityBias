@@ -63,7 +63,7 @@ for (i in 1:num.rep){
 sum.variances <- lapply(simulations, dispRity, metric = c(sum, variances))
 
 # Extract the disparity values (the point estimates explained above)
-point.estimates.sumv <- lapply(sum.variances, extract.dispRity)
+point.estimates.sumv <- lapply(sum.variances, get.disparity)
 
 ## Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
 results.table.sumv <- do.call(rbind, point.estimates.sumv)
@@ -94,7 +94,7 @@ p
 med.pair.distances <- lapply(simulations, dispRity, metric = c(median, pairwise.dist))
 
 #Extract the disparity values (the point estimates explained above)
-point.estimates.mpd <- lapply(med.pair.distances, extract.dispRity)
+point.estimates.mpd <- lapply(med.pair.distances, get.disparity)
 
 ##Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
 results.table.mpd <- do.call(rbind, point.estimates.mpd)
@@ -124,7 +124,7 @@ q
 med.centroid.distances <- lapply(simulations, dispRity, metric = c(median, centroids), centroid = 0)
 
 #Extract the disparity values (the point estimates explained above)
-point.estimates.mcd <- lapply(med.centroid.distances, extract.dispRity)
+point.estimates.mcd <- lapply(med.centroid.distances, get.disparity)
 
 ##Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
 results.table.mcd <- do.call(rbind, point.estimates.mcd)
