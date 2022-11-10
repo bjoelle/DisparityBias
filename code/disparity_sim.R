@@ -44,7 +44,7 @@ bins <- 3 # number of time bins
 fossil.colour1 <- "#5AA8C5"
 fossil.colour2 <- "#F8D754"
 
-num.rep <- 2
+num.rep <- 1
 
 ### Running the simulations RW: switched to lapply so I can use the iteration number within the function
 simulations <- lapply(1:num.rep, function(x){simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, x)})
