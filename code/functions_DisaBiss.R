@@ -167,7 +167,6 @@ generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
 translate.states.0 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
 translate.states.1 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 0) low.sampling else high.sampling)
 
-
 #turns all taxa into a format useable by FossilSim so that time binning can occur
 bin.taxa = function(taxa, nbins, max.age) {
   if(nbins%%1 != 0 || nbins == 0 || nbins < 0) {
@@ -197,7 +196,6 @@ bin.taxa = function(taxa, nbins, max.age) {
   FossilSim::fossils(fs)
 }
 
-
 ### function to turn sim.interval.ages into defined/numbered time bins
 int.assign <- function(fossils, ints){
   if(identical(fossils$hmin, fossils$hmax))
@@ -209,6 +207,56 @@ int.assign <- function(fossils, ints){
     }
   }
   fossils
+}
+
+#### Analysis
+disparity.analysis <- function(simulations, analysis = "sum of variances"){
+  
+  #### Sum of variances
+  if(analysis == "sum of variances"){
+    # Measure the disparity on the output using lapply (applying a function to a list)
+    disparity <- lapply(simulations, dispRity, metric = c(sum, variances))
+    title = "Sum of Variances"
+  } else if (analysis == "pairwise distance"){
+    disparity <- lapply(simulations, dispRity, metric = c(median, pairwise.dist))
+    title = "Median pairwise distances"
+  } else if (analysis == "centroids") {
+    disparity <- lapply(simulations, dispRity, metric = c(median, centroids), centroid = 0)
+    title = "Median distance from centroids"
+  }
+  
+  ####
+  # Extract the disparity values (the point estimates explained above)
+  point.estimates <- lapply(disparity, get.disparity)
+  
+  ## Combine that into a more reader friendly format (a table!) using the rbind function (bind in rows) applied to this list of lists using do.call
+  results.table <- do.call(rbind, point.estimates)
+  
+  columns <- c("values", "sampling")
+  result <- data.frame(matrix(nrow = 0, ncol = length(columns)))
+  colnames(result) <- columns
+  
+  for (i in 1:ncol(results.table)){
+    for (j in results.table[,i]){
+      current.row = c(j,colnames(results.table)[i])
+      result[nrow(result) + 1,] <- current.row
+    }
+  }
+  
+  # observed_disparity - mean(null_disparity)
+  null_disparity <- mean(unlist(results.table[,1]))
+  
+  # sampling regime
+  result$sampling <- as.factor(result$sampling)
+  # disparity
+  result$values <- as.numeric(result$values) - null_disparity
+  
+  # plots
+  p <- ggplot(result, aes(x=sampling, y=values)) +
+    labs(title = title) +
+    geom_boxplot()
+  
+  return(p)
 }
 
 
