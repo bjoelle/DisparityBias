@@ -1,7 +1,7 @@
 
-simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2,iteration){
+simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, iteration, variable, variable_i){
   
-  pdf(paste0(outdir, "simulated_data_", iteration, ".pdf"), height = 11, width = 8.5)
+  pdf(paste0(outdir, "simulated_data_", variable, "_", variable_i, "_", iteration, ".pdf"), height = 11, width = 8.5)
   
   #TODO - add a note here about why this loop is so complicated
   biogeography.stuck.count <- 0
