@@ -16,9 +16,9 @@ library(ggplot2)
 df = data.frame(trait1 = c(), trait2 = c(), area = c())
 
 # plot all true values
-df = rbind(df, data.frame(trait1 = simulations[[1]]$matrix[[1]][,1], 
-                          trait2 = simulations[[1]]$matrix[[1]][,2],
-                          area = "all fossils"))
+df = rbind(df, data.frame(trait1 = simulations[[1]]$matrix[[1]][,1][simulations[[1]]$subsets$all_species$elements[,1]], 
+                          trait2 = simulations[[1]]$matrix[[1]][,2][simulations[[1]]$subsets$all_species$elements[,1]],
+                          area = "all species"))
 # plot area 1
 df = rbind(df, data.frame(trait1 = simulations[[1]]$matrix[[1]][,1][simulations[[1]]$subsets$area_0$elements[,1]], 
                           trait2 = simulations[[1]]$matrix[[1]][,2][simulations[[1]]$subsets$area_0$elements[,1]],
@@ -36,6 +36,6 @@ df = rbind(df, data.frame(trait1 = simulations[[1]]$matrix[[1]][,1][simulations[
 
 
 
-ggplot(df, aes(x = trait1, y = trait2)) + geom_point(aes(colour = factor(area)), alpha = 0.5) + theme_classic()
+ggplot(df, aes(x = trait1, y = trait2)) + geom_point(aes(colour = factor(area)), alpha = 0.5, position=position_dodge((width=0.1))) + theme_classic()
 
 
