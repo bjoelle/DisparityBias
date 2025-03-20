@@ -43,9 +43,9 @@ bins <- 3 # number of time bins
 fossil.colour1 <- "#5AA8C5"
 fossil.colour2 <- "#F8D754"
 
-num.rep <- 10
+num.rep <- 10 # issue a warning when mismatch if sims = FALSE
 
-sims = TRUE
+sims = FALSE
 analysis = TRUE
 
 # a place to store output
@@ -93,25 +93,25 @@ for(i in vals){
 wd = 10
 ht = 3
 
-pdf(file = paste0("output/sumv_", var, "_.pdf"), width = wd, height = ht)
+pdf(file = paste0("../output/sumv_", var, ".pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-sumv_trait.evol.rate_0.005
-sumv_trait.evol.rate_0.01
-sumv_trait.evol.rate_0.03
+for(i in vals){
+  eval(parse(text = paste0("sumv_", var, "_", i)))
+}
 dev.off()
 
-pdf(file = paste0("output/mpd_", var, "_.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-mpd_trait.evol.rate_0.005
-mpd_trait.evol.rate_0.01
-mpd_trait.evol.rate_0.03
+pdf(file = paste0("../output/mpd_", var, ".pdf"), width = wd, height = ht)
+par(mfcol=c(3, 1))
+for(i in vals){
+  eval(parse(text = paste0("mpd_", var, "_", i)))
+}
 dev.off()
 
-pdf(file = paste0("output/mcd_", var, "_.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-mcd_migration.rate_0.001
-mcd_migration.rate_0.003
-mcd_migration.rate_0.01
+pdf(file = paste0("../output/mcd_", var, ".pdf"), width = wd, height = ht)
+par(mfcol=c(3, 1))
+for(i in vals){
+  eval(parse(text = paste0("mcd_", var, "_", i)))
+}
 dev.off()
 
 

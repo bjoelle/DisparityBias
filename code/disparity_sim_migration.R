@@ -1,6 +1,7 @@
 
 ### functions and libraries
 source("functions_DisaBiss.R")
+source("joined_trees.R") #combine these
 
 library(dispRity)
 library(FossilSim)
@@ -16,7 +17,7 @@ outdir="/Users/warnock/Documents/files/work/research/projects/DisparityBias/outp
 # Trees
 birth <- 0.1 # birth rate
 death <- 0.075 # death rate
-tips <- 200 # number of tips in tree
+tips <- 100 # number of tips in tree
 
 # Traits
 trait.num <- 2 # number of traits we are simulating
@@ -26,11 +27,13 @@ trait.evol.rate <- 0.01 # rate of trait evolution* 0.03 - fine
 fossilisation.rate <- 0.05 # rate of fossilisation
 
 # Biogeography simulation
-migration.rate_multi <- c(0.001, 0.003, 0.01) # migration rate*
-threshold <- 0.45 # threshold for spatial split between areas 0 and 1*
+migration.events_multi <- c(1, 2, 6) # migration rate*
 
-fossils.in.area1 <- 0 # setting up parameter for checking spatial split
-iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
+# depricated
+#threshold <- 0.45 # threshold for spatial split between areas 0 and 1*
+
+#fossils.in.area1 <- 0 # setting up parameter for checking spatial split
+#iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
 
 # Biased sampling
 low.sampling <- 0.01 # sampling rate for fossils in low sampling area*
@@ -63,7 +66,7 @@ for(i in vals){
   assign( var, i ) 
   if(sims){
     #TODO: add morphospace plots to the output
-    simulations <- lapply(1:num.rep, function(x){simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, x, var, i)})
+    simulations <- lapply(1:num.rep, function(x){simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, x, var, i)})
     save(simulations, file = paste0(outdir, "data_", var, "_", i, "_", ".RData")) #TODO: need a naming convention for different simulation conditions
   } else {
     load(file = paste0(outdir, "data_", var, "_", i, "_", ".RData"))
@@ -90,28 +93,29 @@ for(i in vals){
   }
 }
 
+# pdf dimensions
 wd = 10
 ht = 3
 
-pdf(file = paste0("sumv_", var, "_.pdf"), width = wd, height = ht)
+pdf(file = paste0(outdir, "sumv_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-sumv_migration.rate_0.001
-sumv_migration.rate_0.003
-sumv_migration.rate_0.01
+sumv_migration.events_1
+sumv_migration.events_2
+sumv_migration.events_6
 dev.off()
 
-pdf(file = paste0("mpd_", var, "_.pdf"), width = wd, height = ht)
+pdf(file = paste0(outdir, "mpd_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-mpd_migration.rate_0.001
-mpd_migration.rate_0.003
-mpd_migration.rate_0.01
+mpd_migration.events_1
+mpd_migration.events_2
+mpd_migration.events_6
 dev.off()
 
-pdf(file = paste0("mcd_", var, "_.pdf"), width = wd, height = ht)
+pdf(file = paste0(outdir, "mcd_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-mcd_migration.rate_0.001
-mcd_migration.rate_0.003
-mcd_migration.rate_0.01
+mcd_migration.events_1
+mcd_migration.events_2
+mcd_migration.events_6
 dev.off()
 
 

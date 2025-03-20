@@ -1,91 +1,49 @@
 
-simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.rate, fossils.in.area1, threshold, iteration.limit, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, iteration, variable, variable_i){
+simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, iteration, variable, variable_i){
   
   pdf(paste0(outdir, "simulated_data_", variable, "_", variable_i, "_", iteration, ".pdf"), height = 11, width = 8.5)
   
-  #TODO - add a note here about why this loop is so complicated
-  biogeography.stuck.count <- 0
-  repeat { 
-    biogeography.stuck <- FALSE
-    
-    ### Step 1: Simulate tree 
-    # current assumption: bifurcating speciation = each branch is a species
-    # current assumption: the trait value for each branch (i.e. each species) is the value at the end of the branch - decision made to maximise diffs
-    tr <- TreeSim::sim.bd.taxa(n = tips, 1, birth, death)[[1]]
-    
-    taxa <- FossilSim::sim.taxonomy(tr, beta = 1) # how you define morphotaxa with respect to the tree
-    
-    ### Step 2: Simulate "true" disparity
-    traits <- generate.traits(taxa, trait.num, tr, trait.evol.rate)
-    
-    ### Step 3: Simulate constant rate of preservation
-    fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, taxonomy = taxa)
-    plot(fossils.uni.dupl, tr, strata = bins, show.strata = TRUE)
-    
-    ### Step 4: Simulate biogeography on tree
-    # assumption: approach assumes migration does not influence tree shape
-    # calculate threshold values for number of taxa in each geographic area
-    # loop to simulate biogeography as a binary character under the Mk model
-    # loop keeps track of number of attempts, exits if iteration.limit is reached
-    # inputs = tree and migration rate
-    # outputs = fossil.biogeographic.area, object of type double
-    
-    #TO DO: integrate resetting iteration.count before 'if' RW: ???
-    
-    number_of_tips <- length(traits$sp)
-    L <- round(sum(threshold*number_of_tips))
-    H <- sum(number_of_tips-L)
-    iteration.count <- 0 #always set at 0, resetting it
-    #  biogeography.stuck = FALSE
-    while(fossils.in.area1 < L || fossils.in.area1 > H) {
-      
-      ##state at the root = ensures root state is randomised, i.e. in approx 50% of tree root state will have low sampling (and vice versa)
-      root_state = sample(c(0, 1), 1)
-      ## Running the biogeography simulation
-      fossil.biogeographic.area <- FossilSim::sim.trait.values(root_state, taxonomy = taxa, model = "Mk", v = migration.rate)
-      ## Updating the number of fossils
-      fossils.in.area1 <- sum(fossil.biogeographic.area == '1')
-      iteration.count <- iteration.count + 1
-      if (iteration.count >= iteration.limit) {
-        biogeography.stuck = TRUE
-      }
-      if (biogeography.stuck == TRUE) {
-        break
-      }
-    }
-    
-    if (biogeography.stuck == TRUE){
-      biogeography.stuck.count <- biogeography.stuck.count + 1
-      if (biogeography.stuck.count >= num.rep*2) {
-        stop("Stuck in deep biogeography mud")
-      }      
-    }
-    else
-    {
-      break
-    }
+  # tree with migration events*
+  out = joined_trees(1, tips, migration.events, birth, death)
+  tree = out[[1]]
+  area = tree$area
+  
+  # clarify taxonomy
+  taxa <- FossilSim::sim.taxonomy(tree = tree, beta = 1)
+  taxa$area = 0
+  taxa$col = 0
+  for(i in c(1:length(taxa$edge))){
+    if(taxa$mode[i] == "r" || taxa$mode[i] == "o") { taxa$area[i] = 1; taxa$col[i] = fossil.colour1; next } 
+    node = taxa$edge[i]
+    taxa$area[i] = area[which(tree$edge[,2] == node)]
+    if(taxa$area[i] == 1) 
+      taxa$col[i] = fossil.colour1
+    else taxa$col[i] = fossil.colour2
   }
+
+  ### Step 2: Simulate "true" disparity
+  traits <- generate.traits(taxa, trait.num, tr, trait.evol.rate)
   
-  ### Step 5: Simulate biased sampling
-  # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
-  # simulate biased sampling on tree [input]
-  # output is fossils.bias = fossil taxa and respective ages when sampling is biased
+  ### Step 3: Simulate constant rate of preservation
+  fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, taxonomy = taxa)
+  plot(fossils.uni.dupl, tree, strata = bins, show.strata = TRUE)
   
-  ## Low sampling in area 1, high sampling in area 0
-  sampling.rate.0 <- translate.states.0(fossil.biogeographic.area, low.sampling, high.sampling)
+  ## Low sampling in area 1, high sampling in area 0 #TODO check this statement is correct
+  sampling.rate.0 <- translate.states.0(taxa$area, low.sampling, high.sampling)
   fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, taxonomy = taxa)
   
   # colourful plots
-  fossil.colours.0 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.0.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
-  plot(fossils.bias.0.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.0)
+  fossil.colours.0 <- taxa$col[sapply(fossils.bias.0.dupl$edge, function(i) which(taxa$edge == i))]
+  
+  plot(fossils.bias.0.dupl, tree, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.0, rho = 0)
 
   ## Low sampling in area 0, high sampling in area 1
-  sampling.rate.1 <- translate.states.1(fossil.biogeographic.area, low.sampling, high.sampling)
+  sampling.rate.1 <- translate.states.1(taxa$area, high.sampling, low.sampling)
   fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, taxonomy = taxa)
   
   # colourful plots
-  fossil.colours.1 <- sapply((fossil.biogeographic.area[unlist(sapply(fossils.bias.1.dupl$sp, function(i) which(taxa$sp == i)))]), function(j) if(j == 1) fossil.colour1 else fossil.colour2)
-  plot(fossils.bias.1.dupl, tr, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.1)
+  fossil.colours.1 <- taxa$col[sapply(fossils.bias.1.dupl$edge, function(i) which(taxa$edge == i))]
+  plot(fossils.bias.1.dupl, tree, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.1, rho = 0)
   
   dev.off()
   
@@ -93,23 +51,25 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
   # calculate bin max/min ages based on tree [input] and number of bins
   
-  max.age <- FossilSim::tree.max(tr)
+  max.age <- FossilSim::tree.max(tree)
   int.ages <- seq(0, max.age, length = bins + 1)
   
-  ###### run Joelle's function
+  ###### bin taxa
+  # bin all taxa - the following allows us to explore what happens when we have all species trait values for a given interval or area
   bin.all <- bin.taxa(taxa, 3, max.age)
   fossils.all.binned <- FossilSim::sim.interval.ages(bin.all, max.age = max.age, strata = bins, use.species.ages = FALSE)
   
   # bin fossils for unbiased sampling set
-  fossils.uni.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.uni.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
   # bin fossils for biased sampling set
-  fossils.bias.0.binned <- FossilSim::sim.interval.ages(fossils.bias.0.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
-  fossils.bias.1.binned <- FossilSim::sim.interval.ages(fossils.bias.1.dupl, tr, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.bias.0.binned <- FossilSim::sim.interval.ages(fossils.bias.0.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.bias.1.binned <- FossilSim::sim.interval.ages(fossils.bias.1.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
   
   bias.0 <- int.assign(fossils.bias.0.binned, int.ages)
   bias.1 <- int.assign(fossils.bias.1.binned, int.ages)
   uni <- int.assign(fossils.uni.binned, int.ages)
   all <- int.assign(fossils.all.binned, int.ages)
+  all$area = sapply(all$sp, function(i) taxa[which(taxa$sp == i),]$area)
 
   # Grabbing just trait values
   trait.space <- traits[, c("trait1", "trait2")]
@@ -128,9 +88,11 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
     ## All the species
     "all_species" = subset(all$sp, all$int == "2"),
     ## All species in location 1
-    "area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
+    #"area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
+    "area_0" = subset(all$sp, all$int == "2" & all$area == "1"),
     ## All species in location 2
-    "area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
+    #"area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
+    "area_1" = subset(all$sp, all$int == "2" & all$area == "2"), 
     ## The uniform sampled group
     "uni_sample" = uni.sample,
     ## The biased sampled group
