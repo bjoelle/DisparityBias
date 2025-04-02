@@ -99,23 +99,23 @@ ht = 3
 
 pdf(file = paste0(outdir, "sumv_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-sumv_migration.events_1
-sumv_migration.events_2
-sumv_migration.events_6
+print(sumv_migration.events_1)
+print(sumv_migration.events_2)
+print(sumv_migration.events_6)
 dev.off()
 
 pdf(file = paste0(outdir, "mpd_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-mpd_migration.events_1
-mpd_migration.events_2
-mpd_migration.events_6
+print(mpd_migration.events_1)
+print(mpd_migration.events_2)
+print(mpd_migration.events_6)
 dev.off()
 
 pdf(file = paste0(outdir, "mcd_results.pdf"), width = wd, height = ht)
 par(mfcol=c(1, 3))
-mcd_migration.events_1
-mcd_migration.events_2
-mcd_migration.events_6
+print(mcd_migration.events_1)
+print(mcd_migration.events_2)
+print(mcd_migration.events_6)
 dev.off()
 
 
