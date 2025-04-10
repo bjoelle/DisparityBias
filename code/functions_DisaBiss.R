@@ -108,7 +108,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
                                  group = my.groups)
   #TG: ignore the warning (or read it to know what it just did ;) - but nothing bad happening here)
   
-  return(disp.groupings)
+  return(list(tree, disp.groupings))
   
 }
 
@@ -219,6 +219,31 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
     geom_boxplot()
   
   return(p)
+}
+
+
+disparity.temporal.analysis <- function(simulations, analysis = "sum of variances"){
+  results <- list()
+  for (i in 1:length(simulations)){
+    clean.data(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]])
+    if(analysis == "sum of variances"){
+      # Measure the disparity on the output using lapply (applying a function to a list)
+      disp_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(sum, variances), time= 2)
+      results[[1]] <- disp_temp
+      title = "Sum of Variances"
+    } else if (analysis == "pairwise distance"){
+      disp_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(median, pairwise.dist), time= 2)
+      results[[1]] <- disp_temp
+      title = "Median pairwise distances"
+    } else if (analysis == "centroids") {
+      dis_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(median, centroids), centroid = 0, time= 2)
+      results[[1]] <- disp_temp
+      title = "Median distance from centroids"
+    }
+  }
+  
+  return(results)
+  
 }
 
 

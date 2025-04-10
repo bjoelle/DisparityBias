@@ -10,7 +10,7 @@ library(ggplot2)
 
 set.seed(23)
 
-outdir="/Users/warnock/Documents/files/work/research/projects/DisparityBias/output/"
+outdir="/Users/julie/OneDrive/Documents/M1-BI-IPFB/Stage-ENS/Disparity/test/"
 
 ### Setting up variables
 
@@ -90,6 +90,10 @@ for(i in vals){
     assign(paste0("sumv_", var, "_", i), sumv)
     assign(paste0("mpd_", var, "_", i), mpd)
     assign(paste0("mcd_", var, "_", i), mcd)
+
+    test_temp <- disparity.temporal.analysis(simulations, analysis = "sum of variances")
+    summary(test_temp)
+
   }
 }
 
