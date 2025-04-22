@@ -40,7 +40,7 @@ low.sampling <- 0.01 # sampling rate for fossils in low sampling area*
 high.sampling <- 0.1 # sampling rate for fossils in high sampling area
 
 # Time binning
-bins <- 3 # number of time bins
+bins <- 2 # number of time bins
 
 #Colours for fossils in tree plots
 fossil.colour1 <- "#5AA8C5"
@@ -73,27 +73,25 @@ for(i in vals){
   }
   
   #TODO: print this to file
-  # Check if enough samples present in subsamples
-  for (j in 1:num.rep){
-    if(lengths(simulations[[j]]$subsets$area_0) < 40 || lengths(simulations[[j]]$subsets$area_1) < 40) {
-      print(paste("Too few fossils in run", j))
-    }
-    else print(paste("All good", j))
-  }
+  # # Check if enough samples present in subsamples
+  # for (j in 1:num.rep){
+  #   if(lengths(simulations[[j]]$subsets$area_0) < 40 || lengths(simulations[[j]]$subsets$area_1) < 40) {
+  #     print(paste("Too few fossils in run", j))
+  #   }
+  #   else print(paste("All good", j))
+  # }
   
   if(analysis){
     ### Disparity Analysis - these functions return plots
     sumv <- disparity.analysis(simulations, analysis = "sum of variances")
     mpd <- disparity.analysis(simulations, analysis = "pairwise distance")
     mcd <- disparity.analysis(simulations, analysis = "centroids")
-    
+
     assign(paste0("sumv_", var, "_", i), sumv)
     assign(paste0("mpd_", var, "_", i), mpd)
     assign(paste0("mcd_", var, "_", i), mcd)
-
-    test_temp <- disparity.temporal.analysis(simulations, analysis = "sum of variances")
-    summary(test_temp)
-
+    
+    
   }
 }
 
@@ -121,6 +119,3 @@ print(mcd_migration.events_1)
 print(mcd_migration.events_2)
 print(mcd_migration.events_6)
 dev.off()
-
-
-

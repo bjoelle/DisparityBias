@@ -68,39 +68,51 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   bias.0 <- int.assign(fossils.bias.0.binned, int.ages)
   bias.1 <- int.assign(fossils.bias.1.binned, int.ages)
   uni <- int.assign(fossils.uni.binned, int.ages)
-  all <- int.assign(fossils.all.binned, int.ages)
-  all$area = sapply(all$sp, function(i) taxa[which(taxa$sp == i),]$area)
+  # all <- int.assign(fossils.all.binned, int.ages)
+  # all$area = sapply(all$sp, function(i) taxa[which(taxa$sp == i),]$area)
 
   # Grabbing just trait values
   trait.space <- traits[, c("trait1", "trait2")]
   
-  uni.sample <- subset(uni$sp, uni$int == "2")
-  uni.sample <- uni.sample[!duplicated(uni.sample)] #removing duplicates
+  uni.sample.int1 <- subset(uni$sp, uni$int == "1")
+  uni.sample.int1 <- uni.sample.int1[!duplicated(uni.sample.int1)] #removing duplicates
+  uni.sample.int2 <- subset(uni$sp, uni$int == "2")
+  uni.sample.int2 <- uni.sample.int2[!duplicated(uni.sample.int2)] #removing duplicates
   
-  bias.0.sample <- subset(bias.0$sp, bias.0$int == "2")
-  bias.0.sample <- bias.0.sample[!duplicated(bias.0.sample)]
+  bias.0.sample.int1 <- subset(bias.0$sp, bias.0$int == "1")
+  bias.0.sample.int1 <- bias.0.sample.int1[!duplicated(bias.0.sample.int1)]
+  bias.0.sample.int2 <- subset(bias.0$sp, bias.0$int == "2")
+  bias.0.sample.int2 <- bias.0.sample.int2[!duplicated(bias.0.sample.int2)]
 
-  bias.1.sample <- subset(bias.1$sp, bias.1$int == "2")
-  bias.1.sample <- bias.1.sample[!duplicated(bias.1.sample)]
+  bias.1.sample.int1 <- subset(bias.1$sp, bias.1$int == "1")
+  bias.1.sample.int1 <- bias.1.sample.int1[!duplicated(bias.1.sample.int1)]
+  bias.1.sample.int2 <- subset(bias.1$sp, bias.1$int == "2")
+  bias.1.sample.int2 <- bias.1.sample.int2[!duplicated(bias.1.sample.int2)]
   
   ## Creating the group vector for dispRity
   my.groups <- list(
-    ## All the species
-    "all_species" = subset(all$sp, all$int == "2"),
-    ## All species in location 1
-    #"area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
-    "area_0" = subset(all$sp, all$int == "2" & all$area == "1"),
-    ## All species in location 2
-    #"area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
-    "area_1" = subset(all$sp, all$int == "2" & all$area == "2"), 
+    # ## All the species
+    # "all_species" = subset(all$sp, all$int == "2"),
+    # ## All species in location 1
+    # #"area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
+    # "area_0" = subset(all$sp, all$int == "2" & all$area == "1"),
+    # ## All species in location 2
+    # #"area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
+    # "area_1" = subset(all$sp, all$int == "2" & all$area == "2"), 
+    
     ## The uniform sampled group
-    "uni_sample" = uni.sample,
+    "uni_sample.int1" = uni.sample.int1,
     ## The biased sampled group
-    "bias_0_sample" = bias.0.sample,
+    "bias_0_sample.int1" = bias.0.sample.int1,
     ## The biased sampled group
-    "bias_1_sample" = bias.1.sample,
-    ## unif species sampling
-    "uni_species" = sample(subset(all$sp, all$int == "2"), 20)
+    "bias_1_sample.int1" = bias.1.sample.int1,
+    ##int2
+    "uni_sample.int2" = uni.sample.int2,
+    "bias_0_sample.int2" = bias.0.sample.int2,
+    "bias_1_sample.int2" = bias.1.sample.int2
+
+    # ## unif species sampling
+    # "uni_species" = sample(subset(all$sp, all$int == "2"), 20)
   )
   
   ## Creating a dispRity object that contains the trait space and the groups
@@ -108,8 +120,7 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
                                  group = my.groups)
   #TG: ignore the warning (or read it to know what it just did ;) - but nothing bad happening here)
   
-  return(list(tree, disp.groupings))
-  
+  return(disp.groupings)
 }
 
 # generate new file for storing traits with taxa in it already [input]
@@ -174,7 +185,7 @@ int.assign <- function(fossils, ints){
 #### Analysis
 disparity.analysis <- function(simulations, analysis = "sum of variances"){
   
-  #### Sum of variances
+  ### Sum of variances
   if(analysis == "sum of variances"){
     # Measure the disparity on the output using lapply (applying a function to a list)
     disparity <- lapply(simulations, dispRity, metric = c(sum, variances))
@@ -213,37 +224,12 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
   # disparity
   result$values <- as.numeric(result$values) - null_disparity
   
-  # plots
-  p <- ggplot(result, aes(x=sampling, y=values)) +
-    labs(title = title) +
-    geom_boxplot()
   
+  #plots
+  p <- ggplot(result, aes(x= factor(sampling, levels= c('bias_0_sample.int1', 'bias_1_sample.int1', 'uni_sample.int1', 
+                                                        'bias_0_sample.int2', 'bias_1_sample.int2', 'uni_sample.int2')), y=values)) +
+    labs(title = title, x = "sampling") +
+    geom_boxplot()
+
   return(p)
 }
-
-
-disparity.temporal.analysis <- function(simulations, analysis = "sum of variances"){
-  results <- list()
-  for (i in 1:length(simulations)){
-    clean.data(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]])
-    if(analysis == "sum of variances"){
-      # Measure the disparity on the output using lapply (applying a function to a list)
-      disp_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(sum, variances), time= 2)
-      results[[1]] <- disp_temp
-      title = "Sum of Variances"
-    } else if (analysis == "pairwise distance"){
-      disp_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(median, pairwise.dist), time= 2)
-      results[[1]] <- disp_temp
-      title = "Median pairwise distances"
-    } else if (analysis == "centroids") {
-      dis_temp <- dispRity.through.time(simulations[[i]][[2]]$matrix[[1]], simulations[[i]][[1]], metric = c(median, centroids), centroid = 0, time= 2)
-      results[[1]] <- disp_temp
-      title = "Median distance from centroids"
-    }
-  }
-  
-  return(results)
-  
-}
-
-
