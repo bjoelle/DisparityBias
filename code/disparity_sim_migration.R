@@ -10,7 +10,7 @@ library(ggplot2)
 
 set.seed(23)
 
-outdir="/Users/julie/OneDrive/Documents/M1-BI-IPFB/Stage-ENS/Disparity/test/"
+outdir="/Users/julie/OneDrive/Documents/M1-BI-IPFB/Stage-ENS/Disparity/test_newmet/"
 
 ### Setting up variables
 
@@ -86,12 +86,22 @@ for(i in vals){
     sumv <- disparity.analysis(simulations, analysis = "sum of variances")
     mpd <- disparity.analysis(simulations, analysis = "pairwise distance")
     mcd <- disparity.analysis(simulations, analysis = "centroids")
-
+    sumr <- disparity.analysis(simulations, analysis = "sum of ranges")
+    
     assign(paste0("sumv_", var, "_", i), sumv)
     assign(paste0("mpd_", var, "_", i), mpd)
     assign(paste0("mcd_", var, "_", i), mcd)
+    assign(paste0("sumr_", var, "_", i), sumr)
     
+    perc_sumv <- perc.intervalle(sumv$plot_env$results.table)
+    perc_mpd <- perc.intervalle(mpd$plot_env$results.table)
+    perc_mcd <- perc.intervalle(mcd$plot_env$results.table)
+    perc_sumr <- perc.intervalle(sumr$plot_env$results.table)
     
+    assign(paste0("perc_sumv_", var, "_", i), perc_sumv)
+    assign(paste0("perc_mpd_", var, "_", i), perc_mpd)
+    assign(paste0("perc_mcd_", var, "_", i), perc_mcd)
+    assign(paste0("perc_sumr_", var, "_", i), perc_sumr)
   }
 }
 
@@ -119,3 +129,26 @@ print(mcd_migration.events_1)
 print(mcd_migration.events_2)
 print(mcd_migration.events_6)
 dev.off()
+
+pdf(file = paste0(outdir, "sumr_results.pdf"), width = wd, height = ht)
+par(mfcol=c(1, 3))
+print(sumr_migration.events_1)
+print(sumr_migration.events_2)
+print(sumr_migration.events_6)
+dev.off()
+
+write.csv(perc_sumv_migration.events_1, file = paste0(outdir,"perc_sumv_migration.events_1.csv"))
+write.csv(perc_sumv_migration.events_2, file = paste0(outdir,"perc_sumv_migration.events_2.csv"))
+write.csv(perc_sumv_migration.events_6, file = paste0(outdir,"perc_sumv_migration.events_6.csv"))
+
+write.csv(perc_mpd_migration.events_1, file = paste0(outdir,"perc_mpd_migration.events_1.csv"))
+write.csv(perc_mpd_migration.events_2, file = paste0(outdir,"perc_mpd_migration.events_2.csv"))
+write.csv(perc_mpd_migration.events_6, file = paste0(outdir,"perc_mpd_migration.events_6.csv"))
+
+write.csv(perc_mcd_migration.events_1, file = paste0(outdir,"perc_mcd_migration.events_1.csv"))
+write.csv(perc_mcd_migration.events_2, file = paste0(outdir,"perc_mcd_migration.events_2.csv"))
+write.csv(perc_mcd_migration.events_6, file = paste0(outdir,"perc_mcd_migration.events_6.csv"))
+
+write.csv(perc_sumr_migration.events_1, file = paste0(outdir,"perc_sumr_migration.events_1.csv"))
+write.csv(perc_sumr_migration.events_2, file = paste0(outdir,"perc_sumr_migration.events_2.csv"))
+write.csv(perc_sumr_migration.events_6, file = paste0(outdir,"perc_sumr_migration.events_6.csv"))

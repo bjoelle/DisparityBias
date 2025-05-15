@@ -78,16 +78,22 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
   uni.sample.int1 <- uni.sample.int1[!duplicated(uni.sample.int1)] #removing duplicates
   uni.sample.int2 <- subset(uni$sp, uni$int == "2")
   uni.sample.int2 <- uni.sample.int2[!duplicated(uni.sample.int2)] #removing duplicates
+  # uni.sample.int3 <- subset(uni$sp, uni$int == "3")
+  # uni.sample.int3 <- uni.sample.int3[!duplicated(uni.sample.int3)] #removing duplicates
   
   bias.0.sample.int1 <- subset(bias.0$sp, bias.0$int == "1")
   bias.0.sample.int1 <- bias.0.sample.int1[!duplicated(bias.0.sample.int1)]
   bias.0.sample.int2 <- subset(bias.0$sp, bias.0$int == "2")
   bias.0.sample.int2 <- bias.0.sample.int2[!duplicated(bias.0.sample.int2)]
+  # bias.0.sample.int3 <- subset(bias.0$sp, bias.0$int == "3")
+  # bias.0.sample.int3 <- bias.0.sample.int3[!duplicated(bias.0.sample.int3)]
 
   bias.1.sample.int1 <- subset(bias.1$sp, bias.1$int == "1")
   bias.1.sample.int1 <- bias.1.sample.int1[!duplicated(bias.1.sample.int1)]
   bias.1.sample.int2 <- subset(bias.1$sp, bias.1$int == "2")
   bias.1.sample.int2 <- bias.1.sample.int2[!duplicated(bias.1.sample.int2)]
+  # bias.1.sample.int3 <- subset(bias.1$sp, bias.1$int == "3")
+  # bias.1.sample.int3 <- bias.1.sample.int3[!duplicated(bias.1.sample.int3)]
   
   ## Creating the group vector for dispRity
   my.groups <- list(
@@ -110,6 +116,10 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
     "uni_sample.int2" = uni.sample.int2,
     "bias_0_sample.int2" = bias.0.sample.int2,
     "bias_1_sample.int2" = bias.1.sample.int2
+    ##int3
+    # "uni_sample.int3" = uni.sample.int3,
+    # "bias_0_sample.int3" = bias.0.sample.int3,
+    # "bias_1_sample.int3" = bias.1.sample.int3
 
     # ## unif species sampling
     # "uni_species" = sample(subset(all$sp, all$int == "2"), 20)
@@ -196,6 +206,9 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
   } else if (analysis == "centroids") {
     disparity <- lapply(simulations, dispRity, metric = c(median, centroids), centroid = 0)
     title = "Median distance from centroids"
+  }else if (analysis == "sum of ranges") {
+    disparity <- lapply(simulations, dispRity, metric = c(sum, ranges))
+    title = "sum of Ranges"
   }
   
   ####
@@ -233,3 +246,49 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
 
   return(p)
 }
+
+perc.intervalle <- function(results.table){
+  
+  # conversion en matrice numérique
+  if(is.list(results.table)) {
+    results.table <- matrix(
+      unlist(results.table),
+      nrow = 10,
+      ncol = 6,
+      byrow = FALSE
+    )
+  }
+  colnames(results.table) <- c("uni_sample.int1", "bias_0_sample.int1", "bias_1_sample.int1",
+                                "uni_sample.int2", "bias_0_sample.int2", "bias_1_sample.int2")
+  results.table <- as.data.frame(results.table)
+  results.table[results.table == "logical,0"] <- NA
+  for(col in colnames(results.table)) {
+    results.table[[col]] <- as.numeric(results.table[[col]])
+  }
+  
+  # mean for each bin
+  results <- data.frame(
+    # int1
+    uni_mean_int1 <- mean(results.table$uni_sample.int1, na.rm = TRUE),
+    bias0_mean_int1 <- mean(results.table$bias_0_sample.int1, na.rm = TRUE),
+    bias1_mean_int1 <- mean(results.table$bias_1_sample.int1, na.rm = TRUE),
+    
+    # int2
+    uni_mean_int2 <- mean(results.table$uni_sample.int2, na.rm = TRUE),
+    bias0_mean_int2 <- mean(results.table$bias_0_sample.int2, na.rm = TRUE),
+    bias1_mean_int2 <- mean(results.table$bias_1_sample.int2, na.rm = TRUE)
+  )
+    
+    # percentage of disp difference
+    results$uni_perc_diff <- ((results$uni_mean_int2 - results$uni_mean_int1) / results$uni_mean_int1) * 100
+    results$bias0_perc_diff <- ((results$bias0_mean_int2 - results$bias0_mean_int1) / results$bias0_mean_int1) * 100
+    results$bias1_perc_diff <- ((results$bias1_mean_int2 - results$bias1_mean_int1) / results$bias1_mean_int1) * 100
+    
+    colnames(results) <- c("uni_mean_int1", "bias0_mean_int1", "bias1_mean_int1", "uni_mean_int2", 
+                           "bias0_mean_int2", "bias1_mean_int2", "uni_perc_diff", "bias0_perc_diff", "bias1_perc_diff")
+  
+  return(results)
+}
+
+
+
