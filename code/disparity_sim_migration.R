@@ -10,7 +10,7 @@ library(ggplot2)
 
 set.seed(23)
 
-outdir="/Users/julie/OneDrive/Documents/M1-BI-IPFB/Stage-ENS/Disparity/test_newmet/"
+outdir="../output/"
 
 ### Setting up variables
 
@@ -152,3 +152,4 @@ write.csv(perc_mcd_migration.events_6, file = paste0(outdir,"perc_mcd_migration.
 write.csv(perc_sumr_migration.events_1, file = paste0(outdir,"perc_sumr_migration.events_1.csv"))
 write.csv(perc_sumr_migration.events_2, file = paste0(outdir,"perc_sumr_migration.events_2.csv"))
 write.csv(perc_sumr_migration.events_6, file = paste0(outdir,"perc_sumr_migration.events_6.csv"))
+

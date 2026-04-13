@@ -1,4 +1,5 @@
 
+####Function 1: Simulation pipeline. Needs to be split up to improve running time & make testing parts of code easier#####
 simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, iteration, variable, variable_i){
   
   pdf(paste0(outdir, "simulated_data_", variable, "_", variable_i, "_", iteration, ".pdf"), height = 11, width = 8.5)
@@ -135,6 +136,9 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
 
 # generate new file for storing traits with taxa in it already [input]
 # simulate trait.num number of traits and append to traits file [output]
+
+####Function 2: Generate trait values. Used in Function 1####
+
 generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
   traits <- taxa
   for(i in 1:trait.num){
@@ -145,12 +149,13 @@ generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
   return(traits)
 }
 
-
+#### Function 3&4: Ads low sampling to one subset and high to other? Used in Function 1#### 
 # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
 translate.states.0 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
 translate.states.1 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 0) low.sampling else high.sampling)
 
-#turns all taxa into a format useable by FossilSim so that time binning can occur
+
+#### Function 5: turns all taxa into a format useable by FossilSim so that time binning can occur. Used in Function 1####
 bin.taxa = function(taxa, nbins, max.age) {
   if(nbins%%1 != 0 || nbins == 0 || nbins < 0) {
     stop("Number of bins must be a positive integer, check nbins")
@@ -179,7 +184,7 @@ bin.taxa = function(taxa, nbins, max.age) {
   FossilSim::fossils(fs)
 }
 
-### function to turn sim.interval.ages into defined/numbered time bins
+#### Function 6: function to turn sim.interval.ages into defined/numbered time bins. Used in Function 1####
 int.assign <- function(fossils, ints){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
@@ -192,7 +197,7 @@ int.assign <- function(fossils, ints){
   fossils
 }
 
-#### Analysis
+#### Function 7: Analysis ####
 disparity.analysis <- function(simulations, analysis = "sum of variances"){
   
   ### Sum of variances
@@ -247,6 +252,8 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
   return(p)
 }
 
+
+####Function 8: French?####
 perc.intervalle <- function(results.table){
   
   # conversion en matrice numérique
@@ -289,6 +296,4 @@ perc.intervalle <- function(results.table){
   
   return(results)
 }
-
-
 
