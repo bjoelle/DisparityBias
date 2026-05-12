@@ -1,56 +1,84 @@
 
-####Function 1: Simulation pipeline. Needs to be split up to improve running time & make testing parts of code easier#####
-simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, iteration, variable, variable_i){
+####Function 1: Makes x amount of trees with simulated traits####
+Tree.Taxa = function(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, 
+                     bins, iteration, variable, variable_i){
   
-  pdf(paste0(outdir, "simulated_data_", variable, "_", variable_i, "_", iteration, ".pdf"), height = 11, width = 8.5)
-  
-  # tree with migration events*
+  # generate tree with migration events
   out = joined_trees(1, tips, migration.events, birth, death)
   tree = out[[1]]
-  area = tree$area
   
-  # clarify taxonomy
+  # clarify taxonomy (I don't know what they meant with 'Clarify' -J)
   taxa <- FossilSim::sim.taxonomy(tree = tree, beta = 1)
   taxa$area = 0
   taxa$col = 0
   for(i in c(1:length(taxa$edge))){
     if(taxa$mode[i] == "r" || taxa$mode[i] == "o") { taxa$area[i] = 1; taxa$col[i] = fossil.colour1; next } 
     node = taxa$edge[i]
-    taxa$area[i] = area[which(tree$edge[,2] == node)]
+    taxa$area[i] = tree$area[which(tree$edge[,2] == node)]
     if(taxa$area[i] == 1) 
       taxa$col[i] = fossil.colour1
     else taxa$col[i] = fossil.colour2
   }
 
-  ### Step 2: Simulate "true" disparity
-  traits <- generate.traits(taxa, trait.num, tr, trait.evol.rate)
+  ### Simulate "true" disparity
+  traits <- generate.traits(taxa, trait.num, trait.evol.rate)
   
-  ### Step 3: Simulate constant rate of preservation
+  ### Simulate constant rate of preservation
   fossils.uni.dupl <- FossilSim::sim.fossils.poisson(rate = fossilisation.rate, taxonomy = taxa)
-  plot(fossils.uni.dupl, tree, strata = bins, show.strata = TRUE)
-  
-  ## Low sampling in area 1, high sampling in area 0 #TODO check this statement is correct
-  sampling.rate.0 <- translate.states.0(taxa$area, low.sampling, high.sampling)
-  fossils.bias.0.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.0, taxonomy = taxa)
-  
-  # colourful plots
-  fossil.colours.0 <- taxa$col[sapply(fossils.bias.0.dupl$edge, function(i) which(taxa$edge == i))]
-  
-  plot(fossils.bias.0.dupl, tree, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.0, rho = 0)
 
-  ## Low sampling in area 0, high sampling in area 1
-  sampling.rate.1 <- translate.states.1(taxa$area, high.sampling, low.sampling)
+  ## Low sampling in area 1, high sampling in area 2
+  sampling.rate.2 <- translate.states(taxa$area, low.sampling, high.sampling, 1)
+  fossils.bias.2.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.2, taxonomy = taxa)
+
+  ## Low sampling in area 2, high sampling in area 1
+  sampling.rate.1 <- translate.states(taxa$area, low.sampling, high.sampling, 2)
   fossils.bias.1.dupl <- FossilSim::sim.fossils.poisson(sampling.rate.1, taxonomy = taxa)
+  ## Save output as RData file.
+  Tree.Taxa.Output=list(tree, taxa, traits, fossils.uni.dupl, fossils.bias.2.dupl, fossils.bias.1.dupl)
+  save(Tree.Taxa.Output,file=paste0(outdir, "TreeTaxa_", variable, "_",variable_i, "_", iteration, ".RData"))
+}
+
+
+####Function 2: Makes plots of the trees made with function 1####  
+Phylogeny.Plots=function(iteration, variable, variable_i, fossil.colour1, fossil.colour2){
+
+  #Load in required RData file
+  load(file = paste0(outdir, "TreeTaxa_", variable, "_",variable_i, "_", iteration, ".RData"))
   
-  # colourful plots
+  #grab required lists from RData file
+  tree=Tree.Taxa.Output[[1]]
+  taxa=Tree.Taxa.Output[[2]]
+  fossils.uni.dupl=Tree.Taxa.Output[[4]]
+  fossils.bias.2.dupl=Tree.Taxa.Output[[5]]
+  fossils.bias.1.dupl=Tree.Taxa.Output[[6]]
+  
+  #Begin pdf process:
+  pdf(paste0(outdir, "simulated_data_", variable, "_", variable_i, "_", iteration, ".pdf"), height = 11, width = 8.5)
+ 
+  # allow dots to be coloured on plots:
   fossil.colours.1 <- taxa$col[sapply(fossils.bias.1.dupl$edge, function(i) which(taxa$edge == i))]
+  fossil.colours.2 <- taxa$col[sapply(fossils.bias.2.dupl$edge, function(i) which(taxa$edge == i))] 
+  #The plots:
+  plot(fossils.uni.dupl, tree, strata = bins, show.strata = TRUE)
+  plot(fossils.bias.2.dupl, tree, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.2, rho = 0)
   plot(fossils.bias.1.dupl, tree, strata = bins, show.strata = TRUE, fossil.col = fossil.colours.1, rho = 0)
+
   
   dev.off()
+}
   
-  ### Step 6: Bin fossils and match traits with species & bins
+####Function 3: takes the output from function 1 and ?? ####
+stopgap=function(a,B){  
+  ### Bin fossils and match traits with species & bins
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
   # calculate bin max/min ages based on tree [input] and number of bins
+  
+  #Load in required Rdata file and grab needed lists
+  load(file = paste0(outdir, "TreeTaxa_", variable, "_",variable_i, "_", iteration, ".RData"))
+  tree=Tree.Taxa.Output[[1]]
+  taxa=Tree.Taxa.Output[[2]]
+  traits=Tree.Taxa.Output[[3]]
+  
   
   max.age <- FossilSim::tree.max(tree)
   int.ages <- seq(0, max.age, length = bins + 1)
@@ -137,9 +165,10 @@ simulation.pipeline <- function(birth, death, tips, trait.num, trait.evol.rate, 
 # generate new file for storing traits with taxa in it already [input]
 # simulate trait.num number of traits and append to traits file [output]
 
-####Function 2: Generate trait values. Used in Function 1####
+####Function 4: Generate trait values. Used in Function 1####
+#Has to be adapted to make sense for trilobites
 
-generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
+generate.traits <- function(taxa, trait.num, trait.evol.rate){
   traits <- taxa
   for(i in 1:trait.num){
     tmp <- FossilSim::sim.trait.values(init = 5, taxonomy = taxa, model = "BM", v = trait.evol.rate, min.value = 0)
@@ -148,14 +177,12 @@ generate.traits <- function(taxa, trait.num, tr, trait.evol.rate){
   }
   return(traits)
 }
-
-#### Function 3&4: Ads low sampling to one subset and high to other? Used in Function 1#### 
+#### Function 5: Ads low sampling to one subset and high to other? Used in Function 1#### 
 # associate high and low sampling with biogeographical areas in fossil.biogeographic.area [input]
-translate.states.0 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 1) low.sampling else high.sampling)
-translate.states.1 <- function(fossil.biogeographic.area, low.sampling, high.sampling) sapply(fossil.biogeographic.area, function(t) if(t == 0) low.sampling else high.sampling)
+translate.states <- function(Area.num, Samp.num, Samp.notNum, Number) sapply(Area.num, function(t) if(t == Number) Samp.num else Samp.notNum)
 
 
-#### Function 5: turns all taxa into a format useable by FossilSim so that time binning can occur. Used in Function 1####
+#### Function 6: turns all taxa into a format useable by FossilSim so that time binning can occur. Used in Function 1####
 bin.taxa = function(taxa, nbins, max.age) {
   if(nbins%%1 != 0 || nbins == 0 || nbins < 0) {
     stop("Number of bins must be a positive integer, check nbins")
@@ -184,7 +211,7 @@ bin.taxa = function(taxa, nbins, max.age) {
   FossilSim::fossils(fs)
 }
 
-#### Function 6: function to turn sim.interval.ages into defined/numbered time bins. Used in Function 1####
+#### Function 7: function to turn sim.interval.ages into defined/numbered time bins. Used in Function 1####
 int.assign <- function(fossils, ints){
   if(identical(fossils$hmin, fossils$hmax))
     stop("fossils must be binned!")
@@ -197,7 +224,7 @@ int.assign <- function(fossils, ints){
   fossils
 }
 
-#### Function 7: Analysis ####
+#### Function 8: Analysis ####
 disparity.analysis <- function(simulations, analysis = "sum of variances"){
   
   ### Sum of variances
@@ -253,7 +280,7 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
 }
 
 
-####Function 8: French?####
+####Function 9: French?####
 perc.intervalle <- function(results.table){
   
   # conversion en matrice numérique

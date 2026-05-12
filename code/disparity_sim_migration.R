@@ -1,6 +1,6 @@
 
-### functions and libraries
-source("functions_DisaBiss.R")
+#### functions and libraries ####
+source("functions_split.R")
 source("joined_trees.R") #combine these
 
 library(dispRity)
@@ -8,70 +8,72 @@ library(FossilSim)
 library(TreeSim)
 library(ggplot2)
 
+#Set seed
 set.seed(23)
-
+#Choose loaction for output files
 outdir="../output/"
 
-### Setting up variables
+#### Setting up variables ####
+#Currently, this is set-up to investigate differing amounts of migration events. Can be changed into other variable.
 
 # Trees
 birth <- 0.1 # birth rate
 death <- 0.075 # death rate
 tips <- 100 # number of tips in tree
-
 # Traits
 trait.num <- 2 # number of traits we are simulating
 trait.evol.rate <- 0.01 # rate of trait evolution* 0.03 - fine
-
 # Uniform Sampling
 fossilisation.rate <- 0.05 # rate of fossilisation
-
 # Biogeography simulation
 migration.events_multi <- c(1, 2, 6) # migration rate*
-
 # depricated
 #threshold <- 0.45 # threshold for spatial split between areas 0 and 1*
-
 #fossils.in.area1 <- 0 # setting up parameter for checking spatial split
 #iteration.limit <- 100 #number of times loop for generating biogeographic areas can loop
-
 # Biased sampling
 low.sampling <- 0.01 # sampling rate for fossils in low sampling area*
 high.sampling <- 0.1 # sampling rate for fossils in high sampling area
-
 # Time binning
 bins <- 2 # number of time bins
-
 #Colours for fossils in tree plots
-fossil.colour1 <- "#5AA8C5"
-fossil.colour2 <- "#F8D754"
-
+fossil.colour1 <- "#8102AB"
+fossil.colour2 <- "#21C213"
+#Number of repetitions per migration rate
 num.rep <- 10
-
+#Setting two variables to TRUE
 sims = TRUE
 analysis = TRUE
-
-# a place to store output
+# creates the place to store output
 if(!dir.exists(outdir)) dir.create(outdir)
 
-### Simulations
+
+
+#### Simulations ####
 
 # checks which variable contains multiple values and loops through them
 var = strsplit( ls(pat = "multi"), "_" )[[1]][1]
 vals = eval( parse( text = ls(pat = "multi") ) )
 
+
+####Part 1: Generates the trees, taxa and taxonomic data & saves them as RData files, 1 for each iteration####
 for(i in vals){
-  
   # assign 
   assign( var, i ) 
-  if(sims){
-    #TODO: add morphospace plots to the output
-    simulations <- lapply(1:num.rep, function(x){simulation.pipeline(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, fossil.colour1, fossil.colour2, x, var, i)})
-    save(simulations, file = paste0(outdir, "data_", var, "_", i, "_", ".RData")) #TODO: need a naming convention for different simulation conditions
-  } else {
-    load(file = paste0(outdir, "data_", var, "_", i, "_", ".RData"))
+    lapply(1:num.rep, function(x){Tree.Taxa(birth, death, tips, trait.num, trait.evol.rate, fossilisation.rate, migration.events, low.sampling, high.sampling, bins, x, var, i)})
+}
+
+####Part 2: Generates the phylogenetic plots from the generated RData files ####
+
+for(i in vals){
+  # assign 
+  assign( var, i ) 
+lapply(1:num.rep, function(x){Phylogeny.Plots(x, var, i, fossil.colour1, fossil.colour2)})
   }
-  
+
+
+
+
   #TODO: print this to file
   # # Check if enough samples present in subsamples
   # for (j in 1:num.rep){
@@ -103,7 +105,7 @@ for(i in vals){
     assign(paste0("perc_mcd_", var, "_", i), perc_mcd)
     assign(paste0("perc_sumr_", var, "_", i), perc_sumr)
   }
-}
+
 
 # pdf dimensions
 wd = 10
