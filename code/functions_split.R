@@ -66,9 +66,10 @@ Phylogeny.Plots=function(iteration, variable, variable_i, fossil.colour1, fossil
   
   dev.off()
 }
+
   
-####Function 3: takes the output from function 1 and ?? ####
-stopgap=function(a,B){  
+####Function 3: takes the output from function 1 and make into input fro DispRity ####
+DispRity_Input=function(iteration, variable, variable_i){  
   ### Bin fossils and match traits with species & bins
   # assumption: no extant samples simulated or sampled, although some fossil species may be extant 
   # calculate bin max/min ages based on tree [input] and number of bins
@@ -78,6 +79,10 @@ stopgap=function(a,B){
   tree=Tree.Taxa.Output[[1]]
   taxa=Tree.Taxa.Output[[2]]
   traits=Tree.Taxa.Output[[3]]
+  fossils.uni.dupl=Tree.Taxa.Output[[4]]
+  fossils.bias.2.dupl=Tree.Taxa.Output[[5]]
+  fossils.bias.1.dupl=Tree.Taxa.Output[[6]]
+  
   
   
   max.age <- FossilSim::tree.max(tree)
@@ -91,10 +96,11 @@ stopgap=function(a,B){
   # bin fossils for unbiased sampling set
   fossils.uni.binned <- FossilSim::sim.interval.ages(fossils.uni.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
   # bin fossils for biased sampling set
-  fossils.bias.0.binned <- FossilSim::sim.interval.ages(fossils.bias.0.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
+  fossils.bias.2.binned <- FossilSim::sim.interval.ages(fossils.bias.2.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
   fossils.bias.1.binned <- FossilSim::sim.interval.ages(fossils.bias.1.dupl, tree, max.age = max.age, strata = bins, use.species.ages = FALSE)
   
-  bias.0 <- int.assign(fossils.bias.0.binned, int.ages)
+  #NOTE: Bias.0= bias.2. Haven't changed it in this part yet.
+  bias.0 <- int.assign(fossils.bias.2.binned, int.ages)
   bias.1 <- int.assign(fossils.bias.1.binned, int.ages)
   uni <- int.assign(fossils.uni.binned, int.ages)
   # all <- int.assign(fossils.all.binned, int.ages)
@@ -156,7 +162,7 @@ stopgap=function(a,B){
   
   ## Creating a dispRity object that contains the trait space and the groups
   disp.groupings <- custom.subsets(data = as.matrix(trait.space),
-                                 group = my.groups)
+                                   group = my.groups)
   #TG: ignore the warning (or read it to know what it just did ;) - but nothing bad happening here)
   
   return(disp.groupings)
@@ -243,7 +249,7 @@ disparity.analysis <- function(simulations, analysis = "sum of variances"){
     title = "sum of Ranges"
   }
   
-  ####
+  #
   # Extract the disparity values (the point estimates explained above)
   point.estimates <- lapply(disparity, get.disparity)
   
@@ -322,5 +328,83 @@ perc.intervalle <- function(results.table){
                            "bias0_mean_int2", "bias1_mean_int2", "uni_perc_diff", "bias0_perc_diff", "bias1_perc_diff")
   
   return(results)
+}
+
+
+####Function 10: Analysis of output####
+Analysis_Output=function(variable, variable_i){  
+
+  load(file = paste0(outdir, "data_", var, "_", i, "_", ".RData"))
+  if(analysis){
+    ### Disparity Analysis - these functions return plots
+    sumv <- disparity.analysis(simulations, analysis = "sum of variances")
+    mpd <- disparity.analysis(simulations, analysis = "pairwise distance")
+    mcd <- disparity.analysis(simulations, analysis = "centroids")
+    sumr <- disparity.analysis(simulations, analysis = "sum of ranges")
+    
+    assign(paste0("sumv_", var, "_", i), sumv)
+    assign(paste0("mpd_", var, "_", i), mpd)
+    assign(paste0("mcd_", var, "_", i), mcd)
+    assign(paste0("sumr_", var, "_", i), sumr)
+    
+    perc_sumv <- perc.intervalle(sumv$plot_env$results.table)
+    perc_mpd <- perc.intervalle(mpd$plot_env$results.table)
+    perc_mcd <- perc.intervalle(mcd$plot_env$results.table)
+    perc_sumr <- perc.intervalle(sumr$plot_env$results.table)
+    
+    assign(paste0("perc_sumv_", var, "_", i), perc_sumv)
+    assign(paste0("perc_mpd_", var, "_", i), perc_mpd)
+    assign(paste0("perc_mcd_", var, "_", i), perc_mcd)
+    assign(paste0("perc_sumr_", var, "_", i), perc_sumr)
+  }
+  
+  
+  # pdf dimensions
+  wd = 10
+  ht = 3
+  
+  pdf(file = paste0(outdir, "sumv_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(sumv_migration.events_1)
+  print(sumv_migration.events_2)
+  print(sumv_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "mpd_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(mpd_migration.events_1)
+  print(mpd_migration.events_2)
+  print(mpd_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "mcd_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(mcd_migration.events_1)
+  print(mcd_migration.events_2)
+  print(mcd_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "sumr_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(sumr_migration.events_1)
+  print(sumr_migration.events_2)
+  print(sumr_migration.events_6)
+  dev.off()
+  
+  write.csv(perc_sumv_migration.events_1, file = paste0(outdir,"perc_sumv_migration.events_1.csv"))
+  write.csv(perc_sumv_migration.events_2, file = paste0(outdir,"perc_sumv_migration.events_2.csv"))
+  write.csv(perc_sumv_migration.events_6, file = paste0(outdir,"perc_sumv_migration.events_6.csv"))
+  
+  write.csv(perc_mpd_migration.events_1, file = paste0(outdir,"perc_mpd_migration.events_1.csv"))
+  write.csv(perc_mpd_migration.events_2, file = paste0(outdir,"perc_mpd_migration.events_2.csv"))
+  write.csv(perc_mpd_migration.events_6, file = paste0(outdir,"perc_mpd_migration.events_6.csv"))
+  
+  write.csv(perc_mcd_migration.events_1, file = paste0(outdir,"perc_mcd_migration.events_1.csv"))
+  write.csv(perc_mcd_migration.events_2, file = paste0(outdir,"perc_mcd_migration.events_2.csv"))
+  write.csv(perc_mcd_migration.events_6, file = paste0(outdir,"perc_mcd_migration.events_6.csv"))
+  
+  write.csv(perc_sumr_migration.events_1, file = paste0(outdir,"perc_sumr_migration.events_1.csv"))
+  write.csv(perc_sumr_migration.events_2, file = paste0(outdir,"perc_sumr_migration.events_2.csv"))
+  write.csv(perc_sumr_migration.events_6, file = paste0(outdir,"perc_sumr_migration.events_6.csv"))
 }
 

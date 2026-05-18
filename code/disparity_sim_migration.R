@@ -71,9 +71,18 @@ for(i in vals){
 lapply(1:num.rep, function(x){Phylogeny.Plots(x, var, i, fossil.colour1, fossil.colour2)})
   }
 
+####Part 3: Create input for DispRity####
+for(i in vals){
+  # assign 
+  assign( var, i ) 
+  simulations = lapply(1:num.rep, function(x){DispRity_Input(x, var, i)})
+  
+  save(simulations, file = paste0(outdir, "data_", var, "_", i, "_", ".RData"))
+  
+}
 
 
-
+#This piece of code is from previous authors, I'm unsure what they mean with this.
   #TODO: print this to file
   # # Check if enough samples present in subsamples
   # for (j in 1:num.rep){
@@ -82,7 +91,11 @@ lapply(1:num.rep, function(x){Phylogeny.Plots(x, var, i, fossil.colour1, fossil.
   #   }
   #   else print(paste("All good", j))
   # }
+
+####Part 4: Analysis of the output####
+for(i in vals){
   
+  load(file = paste0(outdir, "data_", var, "_", i, "_", ".RData"))
   if(analysis){
     ### Disparity Analysis - these functions return plots
     sumv <- disparity.analysis(simulations, analysis = "sum of variances")
@@ -105,53 +118,55 @@ lapply(1:num.rep, function(x){Phylogeny.Plots(x, var, i, fossil.colour1, fossil.
     assign(paste0("perc_mcd_", var, "_", i), perc_mcd)
     assign(paste0("perc_sumr_", var, "_", i), perc_sumr)
   }
+}
 
-
-# pdf dimensions
-wd = 10
-ht = 3
-
-pdf(file = paste0(outdir, "sumv_results.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-print(sumv_migration.events_1)
-print(sumv_migration.events_2)
-print(sumv_migration.events_6)
-dev.off()
-
-pdf(file = paste0(outdir, "mpd_results.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-print(mpd_migration.events_1)
-print(mpd_migration.events_2)
-print(mpd_migration.events_6)
-dev.off()
-
-pdf(file = paste0(outdir, "mcd_results.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-print(mcd_migration.events_1)
-print(mcd_migration.events_2)
-print(mcd_migration.events_6)
-dev.off()
-
-pdf(file = paste0(outdir, "sumr_results.pdf"), width = wd, height = ht)
-par(mfcol=c(1, 3))
-print(sumr_migration.events_1)
-print(sumr_migration.events_2)
-print(sumr_migration.events_6)
-dev.off()
-
-write.csv(perc_sumv_migration.events_1, file = paste0(outdir,"perc_sumv_migration.events_1.csv"))
-write.csv(perc_sumv_migration.events_2, file = paste0(outdir,"perc_sumv_migration.events_2.csv"))
-write.csv(perc_sumv_migration.events_6, file = paste0(outdir,"perc_sumv_migration.events_6.csv"))
-
-write.csv(perc_mpd_migration.events_1, file = paste0(outdir,"perc_mpd_migration.events_1.csv"))
-write.csv(perc_mpd_migration.events_2, file = paste0(outdir,"perc_mpd_migration.events_2.csv"))
-write.csv(perc_mpd_migration.events_6, file = paste0(outdir,"perc_mpd_migration.events_6.csv"))
-
-write.csv(perc_mcd_migration.events_1, file = paste0(outdir,"perc_mcd_migration.events_1.csv"))
-write.csv(perc_mcd_migration.events_2, file = paste0(outdir,"perc_mcd_migration.events_2.csv"))
-write.csv(perc_mcd_migration.events_6, file = paste0(outdir,"perc_mcd_migration.events_6.csv"))
-
-write.csv(perc_sumr_migration.events_1, file = paste0(outdir,"perc_sumr_migration.events_1.csv"))
-write.csv(perc_sumr_migration.events_2, file = paste0(outdir,"perc_sumr_migration.events_2.csv"))
-write.csv(perc_sumr_migration.events_6, file = paste0(outdir,"perc_sumr_migration.events_6.csv"))
-
+#Plotting all the outputs fpr analysis:
+{ 
+  # pdf dimensions
+  wd = 10
+  ht = 3
+  
+  pdf(file = paste0(outdir, "sumv_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(sumv_migration.events_1)
+  print(sumv_migration.events_2)
+  print(sumv_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "mpd_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(mpd_migration.events_1)
+  print(mpd_migration.events_2)
+  print(mpd_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "mcd_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(mcd_migration.events_1)
+  print(mcd_migration.events_2)
+  print(mcd_migration.events_6)
+  dev.off()
+  
+  pdf(file = paste0(outdir, "sumr_results.pdf"), width = wd, height = ht)
+  par(mfcol=c(1, 3))
+  print(sumr_migration.events_1)
+  print(sumr_migration.events_2)
+  print(sumr_migration.events_6)
+  dev.off()
+  
+  write.csv(perc_sumv_migration.events_1, file = paste0(outdir,"perc_sumv_migration.events_1.csv"))
+  write.csv(perc_sumv_migration.events_2, file = paste0(outdir,"perc_sumv_migration.events_2.csv"))
+  write.csv(perc_sumv_migration.events_6, file = paste0(outdir,"perc_sumv_migration.events_6.csv"))
+  
+  write.csv(perc_mpd_migration.events_1, file = paste0(outdir,"perc_mpd_migration.events_1.csv"))
+  write.csv(perc_mpd_migration.events_2, file = paste0(outdir,"perc_mpd_migration.events_2.csv"))
+  write.csv(perc_mpd_migration.events_6, file = paste0(outdir,"perc_mpd_migration.events_6.csv"))
+  
+  write.csv(perc_mcd_migration.events_1, file = paste0(outdir,"perc_mcd_migration.events_1.csv"))
+  write.csv(perc_mcd_migration.events_2, file = paste0(outdir,"perc_mcd_migration.events_2.csv"))
+  write.csv(perc_mcd_migration.events_6, file = paste0(outdir,"perc_mcd_migration.events_6.csv"))
+  
+  write.csv(perc_sumr_migration.events_1, file = paste0(outdir,"perc_sumr_migration.events_1.csv"))
+  write.csv(perc_sumr_migration.events_2, file = paste0(outdir,"perc_sumr_migration.events_2.csv"))
+  write.csv(perc_sumr_migration.events_6, file = paste0(outdir,"perc_sumr_migration.events_6.csv"))
+}
