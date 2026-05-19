@@ -103,8 +103,8 @@ DispRity_Input=function(iteration, variable, variable_i){
   bias.0 <- int.assign(fossils.bias.2.binned, int.ages)
   bias.1 <- int.assign(fossils.bias.1.binned, int.ages)
   uni <- int.assign(fossils.uni.binned, int.ages)
-  # all <- int.assign(fossils.all.binned, int.ages)
-  # all$area = sapply(all$sp, function(i) taxa[which(taxa$sp == i),]$area)
+   all <- int.assign(fossils.all.binned, int.ages)
+   all$area = sapply(all$sp, function(i) taxa[which(taxa$sp == i),]$area)
 
   # Grabbing just trait values
   trait.space <- traits[, c("trait1", "trait2")]
@@ -133,13 +133,13 @@ DispRity_Input=function(iteration, variable, variable_i){
   ## Creating the group vector for dispRity
   my.groups <- list(
     # ## All the species
-    # "all_species" = subset(all$sp, all$int == "2"),
+     "all_species" = subset(all$sp, all$int == "1"),
     # ## All species in location 1
     # #"area_0" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 0))],
-    # "area_0" = subset(all$sp, all$int == "2" & all$area == "1"),
+     "area_0" = subset(all$sp, all$int == "1" & all$area == "1"),
     # ## All species in location 2
     # #"area_1" = subset(all$sp, all$int == "2")[(subset(all$sp, all$int == "2") %in% which(fossil.biogeographic.area == 1))],
-    # "area_1" = subset(all$sp, all$int == "2" & all$area == "2"), 
+     "area_1" = subset(all$sp, all$int == "1" & all$area == "2"), 
     
     ## The uniform sampled group
     "uni_sample.int1" = uni.sample.int1,
